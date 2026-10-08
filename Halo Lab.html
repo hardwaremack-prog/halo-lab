@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Halo Lab</title>
+<link rel="icon" href="data:image/png;base64,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">
+<style>
+:root{
+  --bg:#0c0e12;--panel:#141820;--panel2:#1b2029;--panel3:#232935;--line:#2a313d;
+  --text:#e8ebf1;--mute:#8d96a7;--dim:#5f6878;
+  --acc:#ff4b3a;--acc2:#ff8c42;--ok:#3ddc84;--warn:#ffb547;--bad:#ff5c5c;--blue:#5aa9ff;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:6px 12px}
+button:hover{border-color:#3b4454;background:var(--panel3)}
+button.primary{background:linear-gradient(135deg,var(--acc),var(--acc2));border:0;color:#fff;font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{background:transparent}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc2)}
+label{color:var(--mute);font-size:12px;display:block;margin:10px 0 4px}
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#12151b,#0f1217);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:.3px}
+.logo{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,var(--acc),var(--acc2),#ffd27a,var(--acc));position:relative;box-shadow:0 0 18px #ff4b3a55}
+.logo::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--bg)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+.chip b{color:var(--text);font-weight:600}
+.spacer{flex:1}
+.conn{display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex:none}
+.dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}.dot.bad{background:var(--bad)}.dot.wait{background:var(--warn)}
+#connText{font-size:12px;color:var(--mute);max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+nav{display:flex;gap:2px;padding:0 14px;border-bottom:1px solid var(--line);background:#0f1217;overflow-x:auto}
+nav button{border:0;background:none;border-radius:0;padding:11px 14px;color:var(--mute);border-bottom:2px solid transparent;white-space:nowrap}
+nav button.on{color:var(--text);border-bottom-color:var(--acc)}
+main{min-height:0;overflow:hidden}
+section{display:none;height:100%;overflow:auto}
+section.on{display:block}
+.pad{padding:18px 22px;max-width:1300px;margin:0 auto}
+h2{font-size:18px;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--mute)}.small{font-size:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel3);border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:99;box-shadow:0 8px 30px #0008;max-width:90vw}
+.banner{background:#2a1a12;border:1px solid #5a3420;color:#ffd2b0;border-radius:10px;padding:10px 14px;margin:10px 16px 0}
+.banner a{color:#fff;cursor:pointer;text-decoration:underline}
+
+/* chat */
+#chat.on{display:grid;grid-template-columns:230px 1fr 290px;height:100%}
+.side{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.side .top{padding:12px}
+.chatlist{overflow:auto;flex:1;padding:0 8px 12px}
+.ci{padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--mute);display:flex;justify-content:space-between;gap:6px;align-items:center}
+.ci:hover{background:var(--panel2)}.ci.on{background:var(--panel3);color:var(--text)}
+.ci span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci .x{opacity:0;border:0;background:none;padding:0 4px;color:var(--dim)}.ci:hover .x{opacity:1}
+.center{display:flex;flex-direction:column;min-height:0;min-width:0}
+#msgs{flex:1;overflow:auto;padding:18px 22px}
+.msg{max-width:860px;margin:0 auto 18px}
+.msg.user .body{background:var(--panel2);border:1px solid var(--line);padding:10px 14px;border-radius:12px;margin-left:auto;width:fit-content;max-width:85%}
+.msg.user{display:flex;flex-direction:column;align-items:flex-end}
+.who{font-size:12px;color:var(--acc2);font-family:var(--mono);margin-bottom:4px}
+.body{word-wrap:break-word}
+.body h3,.body h4{margin:8px 0 2px}
+.body code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:13px}
+.code{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}
+.codebar{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);padding:4px 10px;font-size:12px;color:var(--mute)}
+.codebar button{padding:2px 8px;font-size:12px}
+.code pre{margin:0;padding:12px;overflow:auto;background:#090b0e}
+.code code{background:none;padding:0}
+details.think{border-left:2px solid var(--dim);padding:2px 10px;margin:4px 0 8px;color:var(--mute);font-size:13px}
+details.think summary{cursor:pointer;color:var(--dim)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:6px;font-family:var(--mono)}
+.stats b{color:var(--ok)}
+.err{color:var(--bad);font-size:13px;margin-top:6px}
+.caret{display:inline-block;width:8px;height:15px;background:var(--acc2);vertical-align:-2px;margin-left:2px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:0}}
+.imgs{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}.imgs img{max-height:140px;border-radius:8px;border:1px solid var(--line)}
+.composer{border-top:1px solid var(--line);padding:12px 22px;background:var(--panel)}
+.composer .box{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+#input{flex:1;resize:none;min-height:44px;max-height:220px;padding:11px 12px}
+#pending{max-width:860px;margin:0 auto 6px;display:flex;gap:6px}
+#pending img{height:48px;border-radius:6px;border:1px solid var(--line);cursor:pointer}
+.empty{max-width:760px;margin:6vh auto 0;text-align:center}
+.empty h3{font-size:22px;margin:10px 0 4px}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:22px;text-align:left}
+.starters button{text-align:left;padding:12px;border-radius:10px;background:var(--panel)}
+.starters b{display:block;margin-bottom:2px}
+.right{border-left:1px solid var(--line);background:var(--panel);padding:14px;overflow:auto}
+.right h4{margin:0 0 4px}
+.range{display:flex;gap:8px;align-items:center}.range input{flex:1}
+.range output{font-family:var(--mono);font-size:12px;width:46px;text-align:right}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;flex:1;padding:5px 6px;font-size:12px;background:var(--bg);color:var(--mute)}
+.seg button.on{background:var(--panel3);color:var(--text)}
+textarea.sys{width:100%;min-height:110px;resize:vertical;font-size:13px}
+.full{width:100%}
+
+/* library */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.filters button{border-radius:999px;font-size:12px;padding:4px 12px}
+.filters button.on{border-color:var(--acc2);color:var(--acc2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.mcard{display:flex;flex-direction:column;gap:8px}
+.mcard .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.mcard h3{margin:0;font-size:15px}
+.tag{font-family:var(--mono);font-size:12px;color:var(--mute)}
+.badges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.badge.ok{color:var(--ok);border-color:#1f5a3a}.badge.warn{color:var(--warn);border-color:#5a4520}.badge.bad{color:var(--bad);border-color:#5a2525}.badge.inst{color:var(--blue);border-color:#22456b}
+.meter{height:7px;border-radius:9px;background:var(--panel3);overflow:hidden;position:relative}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:9px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px}
+.kv div{background:var(--panel2);border-radius:8px;padding:6px 8px}.kv span{display:block;color:var(--dim);font-size:11px}
+.mcard .acts{display:flex;gap:6px;margin-top:auto}
+.prog{font-size:12px;color:var(--mute)}
+.budget{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.budget input[type=range]{width:220px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:500;font-size:12px}
+td.num{font-family:var(--mono)}
+.bar{height:8px;border-radius:6px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+
+/* arena */
+.arena-cols{display:grid;gap:12px;margin-top:14px}
+.arena-col{min-height:200px;display:flex;flex-direction:column}
+.arena-col .out{flex:1;overflow:auto;max-height:60vh;margin-top:8px}
+.arena-col.win{border-color:var(--ok)}
+.setup h3{margin:22px 0 6px}
+.setup ol{padding-left:20px}.setup li{margin:4px 0}
+.setup code,.mono{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:13px}
+.urlrow{display:grid;grid-template-columns:140px 1fr auto;gap:8px;align-items:center;margin:6px 0}
+
+/* hardware */
+.hwmini{display:flex;gap:10px;align-items:center;cursor:pointer;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.hwmini.off{opacity:.55}
+.hm{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mute);font-family:var(--mono)}
+.hm i{display:block;width:34px;height:6px;border-radius:6px;background:var(--panel3);overflow:hidden;position:relative}
+.hm i b{position:absolute;inset:0 auto 0 0;border-radius:6px;transition:width .4s}
+.hm.npu.live{color:#c9a7ff}
+.hwgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.hwcard h3{margin:0;font-size:14px;color:var(--mute);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.big{font-size:38px;font-weight:700;font-family:var(--mono);line-height:1.1;margin:6px 0 2px}
+.hwcard canvas{width:100%;height:70px;display:block;margin-top:8px}
+.npustate{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--panel2);font-size:13px}
+.npustate.live{background:#241a38;border:1px solid #4b2f7a;color:#e3d4ff}
+.plist{font-size:12px;font-family:var(--mono);color:var(--mute);margin-top:6px}
+@media (max-width:1050px){#chat.on{grid-template-columns:1fr}.side,.right{display:none}.side.show,.right.show{display:flex;position:fixed;top:0;bottom:0;z-index:20;width:290px}.side.show{left:0}.right.show{right:0;display:block}}
+@media (max-width:1500px){.chips .chip:nth-child(n+3){display:none}}
+@media (max-width:1250px){.chips{display:none}}
+@media (max-width:700px){.chips{display:none}.hwmini{display:none}.pad{padding:14px 16px}#msgs,.composer{padding-left:16px;padding-right:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><div class="logo"></div>Halo Lab</div>
+  <div class="chips">
+    <span class="chip"><b>Ryzen AI Max+ 395</b> · 16C/32T</span>
+    <span class="chip"><b>Radeon 8060S</b> · 40 CU</span>
+    <span class="chip"><b>96 GB</b> unified · ~256 GB/s</span>
+    <span class="chip">GPU budget <b id="chipBudget">64 GB</b></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="hwmini off" id="hwMini" title="Live hardware use. Click for details.">
+    <span class="hm" id="hmCpu">CPU <i><b style="background:var(--blue)"></b></i><span>–</span></span>
+    <span class="hm" id="hmGpu">GPU <i><b style="background:var(--acc2)"></b></i><span>–</span></span>
+    <span class="hm npu" id="hmNpu">NPU <i><b style="background:#a974ff"></b></i><span>–</span></span>
+  </div>
+  <div class="conn">
+    <span class="dot" id="connDot"></span><span id="connText">Connecting…</span>
+    <select id="backendSel" title="Which AI engine to talk to"></select>
+    <button class="ghost" id="reconnect" title="Reconnect">↻</button>
+  </div>
+</header>
+<nav id="tabs">
+  <button data-tab="chat" class="on">Chat</button>
+  <button data-tab="arena">Arena</button>
+  <button data-tab="library">Model Library</button>
+  <button data-tab="running">Running</button>
+  <button data-tab="hardware">Hardware</button>
+  <button data-tab="bench">Benchmark</button>
+  <button data-tab="setup">Setup</button>
+</nav>
+<main>
+<!-- CHAT -->
+<section id="chat" class="on">
+  <div class="side" id="sideL">
+    <div class="top"><button class="primary full" id="newChat">+ New chat</button></div>
+    <div class="chatlist" id="chatList"></div>
+  </div>
+  <div class="center">
+    <div id="connBanner"></div>
+    <div id="msgs"></div>
+    <div class="composer">
+      <div id="pending"></div>
+      <div class="box">
+        <button class="ghost" id="toggleL" title="Chats">☰</button>
+        <button class="ghost" id="attach" title="Attach an image (vision models)">📎</button>
+        <input type="file" id="file" accept="image/*" multiple hidden>
+        <textarea id="input" rows="1" placeholder="Message your local model…  (Enter to send, Shift+Enter for a new line)"></textarea>
+        <button class="primary" id="sendBtn">Send</button>
+        <button class="ghost" id="toggleR" title="Settings">⚙</button>
+      </div>
+    </div>
+  </div>
+  <div class="right" id="sideR">
+    <h4>Model</h4>
+    <select id="chatModel" class="full"></select>
+    <div class="small muted" id="modelInfo" style="margin-top:4px"></div>
+    <label>Personality</label>
+    <select id="preset" class="full">
+      <option value="assistant">Assistant: direct and accurate</option>
+      <option value="coder">Coder: complete, working code</option>
+      <option value="writer">Writer: drafts and edits</option>
+      <option value="tutor">Tutor: step-by-step teaching</option>
+      <option value="analyst">Analyst: careful reasoning</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <label>System prompt</label>
+    <textarea id="system" class="sys"></textarea>
+    <label>Creativity (temperature)</label>
+    <div class="range"><input type="range" id="temp" min="0" max="1.5" step="0.05"><output id="tempOut"></output></div>
+    <label>Context window (how much it remembers)</label>
+    <select id="ctx" class="full">
+      <option value="4096">4K tokens: fastest</option>
+      <option value="8192">8K tokens</option>
+      <option value="16384">16K tokens</option>
+      <option value="32768">32K tokens: long documents</option>
+      <option value="65536">64K tokens</option>
+      <option value="131072">128K tokens: uses a lot of memory</option>
+    </select>
+    <label>Keep model loaded after use</label>
+    <select id="keep" class="full">
+      <option value="5m">5 minutes</option>
+      <option value="30m">30 minutes</option>
+      <option value="2h">2 hours</option>
+      <option value="-1">Until I unload it</option>
+    </select>
+    <label>Thinking (reasoning models)</label>
+    <div class="seg" id="thinkSeg"><button data-v="auto">Auto</button><button data-v="on">On</button><button data-v="off">Off</button></div>
+    <p class="small muted">Context, keep-loaded and thinking apply to Ollama. LM Studio and Lemonade use their own settings for those.</p>
+    <button class="full" id="exportChat" style="margin-top:8px">Export this chat (.md)</button>
+  </div>
+</section>
+
+<!-- ARENA -->
+<section id="arena"><div class="pad">
+  <h2>Arena</h2>
+  <p class="sub">Ask several models the same question and compare answers and speed side by side.</p>
+  <div class="card">
+    <textarea id="arenaPrompt" class="full" rows="3" placeholder="e.g. Explain how a heat pump works to a 12-year-old."></textarea>
+    <div class="row" style="margin-top:10px" id="arenaPickers"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="arenaAdd">+ Add model</button>
+      <select id="arenaMode"><option value="seq">One after another (fair speed test)</option><option value="par">All at once</option></select>
+      <div class="spacer"></div>
+      <button class="primary" id="arenaRun">Run</button><button id="arenaStop" disabled>Stop</button>
+    </div>
+  </div>
+  <div class="arena-cols" id="arenaCols"></div>
+</div></section>
+
+<!-- LIBRARY -->
+<section id="library"><div class="pad">
+  <h2>Model Library</h2>
+  <p class="sub">Picked for a 96 GB Strix Halo machine. Fit and speed update with your GPU budget and context size. Speeds are rough estimates; use Benchmark for real numbers.</p>
+  <div class="card budget">
+    <div><label style="margin-top:0">GPU memory budget (what you set in AMD Software or BIOS)</label>
+      <div class="range"><input type="range" id="budget" min="16" max="96" step="4"><output id="budgetOut"></output></div></div>
+    <div class="small muted" style="max-width:420px">On a 96 GB machine, 64 GB for the GPU is a solid start and leaves Windows 32 GB. Models marked <span style="color:var(--warn)">Tight</span> may still run by borrowing shared memory, just slower.</div>
+    <div class="spacer"></div>
+    <div><label style="margin-top:0">Download any model by name</label>
+      <div class="row"><input id="customTag" placeholder="e.g. qwen3:14b or hf.co/user/repo:Q4_K_M" style="width:300px"><button class="primary" id="customPull">Download</button></div></div>
+  </div>
+  <div class="filters" id="filters"></div>
+  <div class="grid" id="libGrid"></div>
+  <h3 style="margin-top:26px">Also installed</h3>
+  <div id="otherInstalled" class="muted small"></div>
+</div></section>
+
+<!-- RUNNING -->
+<section id="running"><div class="pad">
+  <h2>Running now</h2>
+  <p class="sub">Models currently loaded in memory. Unload one to free memory for a bigger model.</p>
+  <div class="card">
+    <div class="row"><b id="loadedSum">–</b><div class="spacer"></div><button id="unloadAll" class="danger">Unload all</button></div>
+    <div class="meter" style="margin:10px 0 4px;height:12px"><i id="loadedBar" style="width:0;background:linear-gradient(90deg,var(--acc),var(--acc2))"></i></div>
+    <div class="small muted" id="loadedNote"></div>
+  </div>
+  <div class="card" style="margin-top:12px"><table><thead><tr><th>Model</th><th>Memory</th><th>On GPU</th><th>Context</th><th>Unloads</th><th></th></tr></thead><tbody id="psBody"></tbody></table></div>
+</div></section>
+
+<!-- HARDWARE -->
+<section id="hardware"><div class="pad">
+  <h2>Hardware</h2>
+  <p class="sub">Live use of the CPU, Radeon GPU and Ryzen AI NPU, updated every couple of seconds.</p>
+  <div id="hwOffline"></div>
+  <div class="hwgrid">
+    <div class="card hwcard"><h3>NPU <span class="badge" id="npuBadge">–</span></h3><div class="big" id="npuBig" style="color:#c9a7ff">–</div><div class="small muted" id="npuName">Ryzen AI NPU</div><canvas id="cvNpu"></canvas><div class="npustate" id="npuState">Waiting for the hardware monitor…</div><div class="plist" id="npuProcs"></div></div>
+    <div class="card hwcard"><h3>GPU <span class="small" id="gpuEng"></span></h3><div class="big" id="gpuBig" style="color:var(--acc2)">–</div><div class="small muted" id="gpuName">Radeon 8060S</div><canvas id="cvGpu"></canvas><div class="plist" id="gpuProcs"></div></div>
+    <div class="card hwcard"><h3>CPU</h3><div class="big" id="cpuBig" style="color:var(--blue)">–</div><div class="small muted" id="cpuName">Ryzen AI Max+ 395</div><canvas id="cvCpu"></canvas></div>
+    <div class="card hwcard"><h3>Memory</h3>
+      <label style="margin-top:6px">System RAM</label><div class="meter" style="height:10px"><i id="ramBar" style="width:0;background:var(--blue)"></i></div><div class="small muted" id="ramTxt">–</div>
+      <label>GPU memory (dedicated)</label><div class="meter" style="height:10px"><i id="vramBar" style="width:0;background:var(--acc2)"></i></div><div class="small muted" id="vramTxt">–</div>
+      <label>GPU borrowing shared RAM</label><div class="small muted" id="sharedTxt">–</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3 style="margin:0 0 6px;font-size:15px">Why is the NPU usually at 0%?</h3>
+    <p class="small muted" style="margin:0">The NPU is a low-power AI chip built for efficiency, not raw speed. <b>Ollama, LM Studio and llama.cpp run models on the GPU</b>, which is far faster for big models on this machine, so the NPU sits idle while you chat with them. That's normal.</p>
+    <p class="small muted">To put the NPU to work, use <b>AMD Lemonade Server</b> (pick it at the top right) with a model marked <b>NPU</b> or <b>Hybrid</b> in Lemonade's model manager. Hybrid models read your prompt on the NPU and write the answer on the GPU. Windows Studio Effects (camera blur, eye contact) and some Copilot+ features also use the NPU, and they'll show up here too.</p>
+  </div>
+</div></section>
+
+<!-- BENCH -->
+<section id="bench"><div class="pad">
+  <h2>Benchmark</h2>
+  <p class="sub">Measure real speed on your hardware. Models run one at a time with temperature 0 for repeatable results.</p>
+  <div class="card">
+    <label style="margin-top:0">Test</label>
+    <select id="benchTest">
+      <option value="short">Quick reply (about 128 tokens out)</option>
+      <option value="long">Long writing (about 512 tokens out)</option>
+      <option value="code">Coding task (about 400 tokens out)</option>
+      <option value="prompt">Big prompt (about 3,000 tokens in, tests reading speed)</option>
+    </select>
+    <label>Models</label>
+    <div id="benchModels" class="row"></div>
+    <div class="row" style="margin-top:12px"><button class="primary" id="benchRun">Run benchmark</button><button id="benchStop" disabled>Stop</button><span class="muted small" id="benchStatus"></span><div class="spacer"></div><button id="benchClear" class="ghost small">Clear history</button></div>
+  </div>
+  <div class="card" style="margin-top:12px"><table><thead><tr><th>When</th><th>Model</th><th>Test</th><th>Load</th><th>Reading (prompt tok/s)</th><th>First token</th><th>Writing (tok/s)</th><th style="width:18%"></th><th>Peak GPU / NPU</th></tr></thead><tbody id="benchBody"></tbody></table></div>
+</div></section>
+
+<!-- SETUP -->
+<section id="setup"><div class="pad setup">
+  <h2>Setup</h2>
+  <p class="sub">Halo Lab is the dashboard. The models run in an engine on this computer. Ollama is the easiest and works with every tab.</p>
+  <div class="card">
+    <h3 style="margin-top:0">Engine addresses</h3>
+    <div id="urlRows"></div>
+  </div>
+  <h3>1. Install Ollama (recommended)</h3>
+  <ol>
+    <li>Download and install from <span class="mono">ollama.com/download</span> (Windows).</li>
+    <li>It runs in the system tray. The dot at the top right turns green when Halo Lab can see it.</li>
+    <li>Go to <b>Model Library</b> and press <b>Download</b> on a model. <b>Qwen3 30B-A3B</b> or <b>gpt-oss 20B</b> are great first picks: smart and very fast on this chip.</li>
+  </ol>
+  <h3>2. If the dot stays red</h3>
+  <p>Ollama blocks web pages it doesn't recognize. Run <span class="mono">Fix Ollama connection.bat</span> from the Halo Lab folder once, or do it by hand in PowerShell:</p>
+  <p><span class="mono">setx OLLAMA_ORIGINS "*"</span> then quit Ollama from the tray icon and start it again.</p>
+  <h3>3. Give the GPU more memory</h3>
+  <ol>
+    <li>Open <b>AMD Software: Adrenalin Edition</b> → <b>Performance</b> → <b>Tuning</b> and look for <b>Variable Graphics Memory</b>. (Menu names can shift between driver versions. The same setting is also in the BIOS as the UMA frame buffer size.)</li>
+    <li>On a 96 GB EVO-X2, <b>64 GB</b> is a good balance. Bigger lets you run gpt-oss 120B comfortably, but Windows needs at least 16 GB left over.</li>
+    <li>Restart, then set the same number in Model Library → GPU memory budget.</li>
+  </ol>
+  <h3>Other engines</h3>
+  <ol>
+    <li><b>LM Studio</b>: in the Developer tab, start the server and turn on <b>Enable CORS</b>. Chat, Arena and Benchmark work. Download models in LM Studio's own Discover tab.</li>
+    <li><b>AMD Lemonade Server</b>: AMD's engine that can also use the NPU. Default address is already filled in above.</li>
+    <li><b>llama.cpp server</b>: start <span class="mono">llama-server</span> with the Vulkan build. It reports exact timings to the Benchmark tab.</li>
+  </ol>
+  <h3>Hardware monitor (CPU, GPU and NPU meters)</h3>
+  <ol>
+    <li>Web pages can't read hardware sensors, so Halo Lab comes with a tiny helper, <span class="mono">halo-monitor.ps1</span>. It reads the same counters Task Manager uses and shares them only with this computer.</li>
+    <li>Start everything with <span class="mono">Start Halo Lab.bat</span>. It opens the monitor in a small minimized window and then opens the dashboard. Closing that window stops the monitor.</li>
+    <li>Seeing NPU activity needs Windows 11 24H2 or newer and AMD's NPU driver. If Task Manager's Performance tab shows an NPU, Halo Lab will too.</li>
+  </ol>
+  <h3>Speed tips for this chip</h3>
+  <ol>
+    <li><b>MoE models fly here.</b> Models like Qwen3 30B-A3B and gpt-oss only use a few billion "active" parameters per word, so they run 30–60+ tok/s. Dense 70B models are smart but crawl at around 4–6 tok/s.</li>
+    <li>Bigger context windows use more memory and slow the first token. Use 8–16K unless you're pasting long documents.</li>
+    <li>Plug in the power brick and use the machine's performance mode for best results.</li>
+  </ol>
+  <p class="muted small">Everything stays on this computer. Chats are saved in this browser only.</p>
+</div></section>
+</main>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem('halolab.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('halolab.'+k,JSON.stringify(v))}catch(e){}}};
+const gb=b=>(b/1e9).toFixed(b>=1e10?0:1)+' GB';
+const f=(v,d=1)=>v==null||!isFinite(v)?'–':v.toFixed(d);
+let toastT;function toast(m){let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',4200)}
+
+/* ---------- settings ---------- */
+const BACKENDS={
+  ollama:{label:'Ollama',type:'ollama',url:'http://localhost:11434'},
+  lmstudio:{label:'LM Studio',type:'openai',url:'http://localhost:1234/v1'},
+  lemonade:{label:'AMD Lemonade',type:'openai',url:'http://localhost:8000/api/v1'},
+  llamacpp:{label:'llama.cpp server',type:'openai',url:'http://localhost:8080/v1'}
+};
+const S=Object.assign({backend:'ollama',urls:{},gpuGB:64,temp:0.7,ctx:8192,keep:'30m',think:'auto',preset:'assistant',custom:'',model:''},store.get('settings',{}));
+const saveS=()=>store.set('settings',S);
+const B=()=>{const b=BACKENDS[S.backend]||BACKENDS.ollama;return {...b,url:(S.urls[S.backend]||b.url).replace(/\/+$/,'')}};
+
+const PRESETS={
+  assistant:'You are a helpful, precise assistant. Be direct and accurate, and say so when you are unsure.',
+  coder:'You are a senior software engineer. Write complete, working code with brief explanations. Prefer clear, idiomatic solutions and point out bugs or risks you notice.',
+  writer:'You are a skilled writing partner. Match the requested tone, keep prose tight, and when asked to improve text, give a revised version followed by a short note on what changed.',
+  tutor:'You are a patient tutor. Explain step by step with concrete examples, keep it at the learner\'s level, and check understanding with a quick question at the end.',
+  analyst:'You are a careful analyst. Break problems into parts, state your assumptions, reason step by step, and finish with a clear conclusion.'
+};
+const systemText=()=>S.preset==='custom'?S.custom:PRESETS[S.preset];
+
+/* ---------- catalog (sizes are Ollama Q4-class downloads, approximate) ---------- */
+const CATALOG=[
+ {tag:'gpt-oss:120b',name:'gpt-oss 120B',maker:'OpenAI',params:'117B MoE',active:5.1,size:65,kv:.07,bpp:.55,kinds:['chat','reason'],ctx:'128K',note:'The flagship open model that fits this box. Strong reasoning at real conversational speed thanks to MoE. Needs ~70 GB of GPU memory.'},
+ {tag:'gpt-oss:20b',name:'gpt-oss 20B',maker:'OpenAI',params:'21B MoE',active:3.6,size:14,kv:.05,bpp:.55,kinds:['chat','reason','fast'],ctx:'128K',note:'Fast, capable reasoning model. A great everyday default.'},
+ {tag:'qwen3:30b',name:'Qwen3 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:19,kv:.1,bpp:.6,kinds:['chat','reason','fast'],ctx:'256K',note:'Very fast all-rounder with optional thinking mode. Excellent first download.'},
+ {tag:'qwen3-coder:30b',name:'Qwen3 Coder 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:19,kv:.1,bpp:.6,kinds:['code','fast'],ctx:'256K',note:'Coding specialist. Quick enough to feel interactive.'},
+ {tag:'llama4:scout',name:'Llama 4 Scout',maker:'Meta',params:'109B MoE',active:17,size:67,kv:.2,bpp:.6,kinds:['chat','vision'],ctx:'10M',note:'Huge MoE model that can also read images. Uses most of your memory.'},
+ {tag:'llama3.3:70b',name:'Llama 3.3 70B',maker:'Meta',params:'70B dense',active:70,size:43,kv:.33,bpp:.6,kinds:['chat'],ctx:'128K',note:'Big, knowledgeable classic. Slow on any non-datacenter chip; good for careful answers you can wait for.'},
+ {tag:'deepseek-r1:70b',name:'DeepSeek-R1 70B',maker:'DeepSeek',params:'70B dense',active:70,size:43,kv:.33,bpp:.6,kinds:['reason'],ctx:'128K',note:'Thinks out loud before answering. Strong at math and logic, slow to finish.'},
+ {tag:'qwen3:32b',name:'Qwen3 32B',maker:'Alibaba',params:'32B dense',active:32,size:20,kv:.26,bpp:.6,kinds:['chat','reason'],ctx:'128K',note:'Dense sibling of the 30B-A3B: a bit smarter, several times slower.'},
+ {tag:'deepseek-r1:32b',name:'DeepSeek-R1 32B',maker:'DeepSeek',params:'32B dense',active:32,size:20,kv:.26,bpp:.6,kinds:['reason'],ctx:'128K',note:'Mid-size reasoning model.'},
+ {tag:'gemma3:27b',name:'Gemma 3 27B',maker:'Google',params:'27B dense',active:27,size:17,kv:.25,bpp:.6,kinds:['chat','vision'],ctx:'128K',note:'Well-rounded writer that understands images.'},
+ {tag:'qwen2.5vl:32b',name:'Qwen2.5-VL 32B',maker:'Alibaba',params:'32B dense',active:32,size:21,kv:.26,bpp:.6,kinds:['vision'],ctx:'128K',note:'Reads screenshots, charts and documents well.'},
+ {tag:'mistral-small3.2:24b',name:'Mistral Small 3.2',maker:'Mistral',params:'24B dense',active:24,size:15,kv:.16,bpp:.6,kinds:['chat','vision'],ctx:'128K',note:'Snappy, follows instructions well, sees images.'},
+ {tag:'devstral:24b',name:'Devstral 24B',maker:'Mistral',params:'24B dense',active:24,size:14,kv:.16,bpp:.6,kinds:['code'],ctx:'128K',note:'Built for coding agents and multi-file edits.'},
+ {tag:'phi4:14b',name:'Phi-4 14B',maker:'Microsoft',params:'14B dense',active:14,size:9.1,kv:.2,bpp:.6,kinds:['chat','reason','fast'],ctx:'16K',note:'Small but sharp at math and logic.'},
+ {tag:'llama3.2:3b',name:'Llama 3.2 3B',maker:'Meta',params:'3B dense',active:3,size:2,kv:.11,bpp:.65,kinds:['fast'],ctx:'128K',note:'Tiny and instant. Handy for testing that everything works.'}
+];
+const KINDS={all:'All',chat:'General',reason:'Reasoning',code:'Coding',vision:'Sees images',fast:'Fast'};
+let libFilter='all';
+
+/* ---------- connection & API ---------- */
+let installed=[], connected=false;
+async function errText(r){let t='';try{t=await r.text();const j=JSON.parse(t);t=j.error?.message||j.error||t}catch(e){}return `${r.status} ${String(t).slice(0,240)}`}
+async function api(path,opt={}){const o={...opt};if(o.body)o.headers={'Content-Type':'application/json'};const r=await fetch(B().url+path,o);if(!r.ok)throw new Error(await errText(r));const t=await r.text();try{return JSON.parse(t)}catch(e){return t}}
+async function* readLines(resp){const rd=resp.body.getReader(),dec=new TextDecoder();let buf='';for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;while((i=buf.indexOf('\n'))>=0){const l=buf.slice(0,i).trim();buf=buf.slice(i+1);if(l)yield l}}if(buf.trim())yield buf.trim()}
+function setStatus(cls,txt){$('#connDot').className='dot '+cls;$('#connText').textContent=txt;$('#connText').title=txt}
+async function connect(){
+  setStatus('wait','Connecting to '+B().label+'…');
+  try{
+    if(B().type==='ollama'){const v=await api('/api/version');setStatus('ok',`${B().label} ${v.version||''}`)}
+    else{await api('/models');setStatus('ok',B().label)}
+    connected=true;await refreshModels();
+  }catch(e){connected=false;installed=[];setStatus('bad',B().label+' not reachable');renderModelSelects();renderLibrary()}
+  renderBanner();if(curTab==='running')refreshPs();
+}
+async function refreshModels(){
+  if(B().type==='ollama'){const j=await api('/api/tags');installed=(j.models||[]).map(m=>({name:m.name,size:m.size,params:m.details?.parameter_size||'',quant:m.details?.quantization_level||''}))}
+  else{const j=await api('/models');installed=(j.data||[]).map(m=>({name:m.id,size:0,params:'',quant:''}))}
+  installed.sort((a,b)=>a.name.localeCompare(b.name));
+  renderModelSelects();renderLibrary();renderBenchModels();
+}
+const isInstalled=tag=>installed.some(m=>m.name===tag||m.name===tag+':latest');
+function friendlyErr(e){
+  const m=String(e.message||e);
+  if(e.name==='TypeError'||/Failed to fetch|NetworkError/i.test(m))return `Can't reach ${B().label} at ${B().url}. Make sure it's running. If it is, see Setup → "If the dot stays red".`;
+  if(/does not support thinking/i.test(m))return 'This model has no thinking mode. Set Thinking to Auto in the settings panel.';
+  if(/does not support images|vision/i.test(m))return 'This model can\'t read images. Pick one tagged "Sees images" in the Library.';
+  if(/memory|out of memory|insufficient/i.test(m))return 'Not enough memory to load this model. Unload others in the Running tab, lower the context window, or raise the GPU budget in AMD Software. ('+m+')';
+  return m;
+}
+
+/* streaming chat for both engine types */
+async function streamChat({model,messages,onDelta,signal,temp,maxTok,ctx}){
+  const b=B(),t0=performance.now();let ttft=null,out='',think='',st={};
+  const mark=()=>{if(ttft==null)ttft=performance.now()-t0};
+  if(b.type==='ollama'){
+    const body={model,stream:true,keep_alive:S.keep==='-1'?-1:S.keep,
+      messages:messages.map(m=>{const o={role:m.role,content:m.content};if(m.images?.length)o.images=m.images.map(x=>x.split(',')[1]);return o}),
+      options:{temperature:temp??S.temp,num_ctx:ctx??S.ctx}};
+    if(maxTok)body.options.num_predict=maxTok;
+    if(S.think!=='auto')body.think=S.think==='on';
+    const r=await fetch(b.url+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
+    if(!r.ok)throw new Error(await errText(r));
+    for await(const l of readLines(r)){let j;try{j=JSON.parse(l)}catch(e){continue}
+      if(j.error)throw new Error(j.error);
+      const c=j.message?.content||'',th=j.message?.thinking||'';
+      if(c||th){mark();out+=c;think+=th;onDelta&&onDelta(out,think)}
+      if(j.done)st={genTok:j.eval_count,genSec:(j.eval_duration||0)/1e9,promptTok:j.prompt_eval_count,promptSec:(j.prompt_eval_duration||0)/1e9,loadSec:(j.load_duration||0)/1e9};
+    }
+  }else{
+    const body={model,stream:true,temperature:temp??S.temp,stream_options:{include_usage:true},
+      messages:messages.map(m=>m.images?.length?{role:m.role,content:[{type:'text',text:m.content},...m.images.map(u=>({type:'image_url',image_url:{url:u}}))]}:{role:m.role,content:m.content})};
+    if(maxTok)body.max_tokens=maxTok;
+    const r=await fetch(b.url+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
+    if(!r.ok)throw new Error(await errText(r));
+    let chunks=0;
+    for await(const l of readLines(r)){if(!l.startsWith('data:'))continue;const d=l.slice(5).trim();if(d==='[DONE]')break;let j;try{j=JSON.parse(d)}catch(e){continue}
+      if(j.error)throw new Error(j.error.message||j.error);
+      const dl=j.choices?.[0]?.delta||{},c=dl.content||'',th=dl.reasoning_content||dl.reasoning||'';
+      if(c||th){mark();chunks++;out+=c;think+=th;onDelta&&onDelta(out,think)}
+      if(j.usage){st.genTok=j.usage.completion_tokens;st.promptTok=j.usage.prompt_tokens}
+      if(j.timings){st.genTok=j.timings.predicted_n;st.genSec=j.timings.predicted_ms/1000;st.promptTok=j.timings.prompt_n;st.promptSec=j.timings.prompt_ms/1000}
+    }
+    if(!st.genTok)st.genTok=chunks;
+  }
+  st.total=(performance.now()-t0)/1000;st.ttft=ttft!=null?ttft/1000:null;
+  if(!st.genSec&&st.genTok&&st.ttft!=null)st.genSec=Math.max(.001,st.total-st.ttft);
+  st.tps=st.genTok&&st.genSec?st.genTok/st.genSec:null;
+  st.pps=st.promptTok&&st.promptSec?st.promptTok/st.promptSec:null;
+  return {text:out,think,stats:st};
+}
+
+/* ---------- rendering text ---------- */
+function splitThink(text,think){
+  if(!think){const m=text.match(/^\s*<think>([\s\S]*?)(<\/think>|$)/);if(m){think=m[1];text=m[2]?text.slice(m.index+m[0].length):''}}
+  return {text:text.replace(/^\s+/,''),think:(think||'').trim()};
+}
+function inlineMd(t){
+  let h=esc(t);
+  h=h.replace(/^#{3,6} (.*)$/gm,'<h4>$1</h4>').replace(/^#{1,2} (.*)$/gm,'<h3>$1</h3>');
+  h=h.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g,'$1<i>$2</i>');
+  h=h.replace(/^(\s*)[-*] (.*)$/gm,'$1• $2');
+  h=h.replace(/(<\/h[34]>)\n/g,'$1').replace(/\n/g,'<br>');
+  return h;
+}
+function md(src){
+  return String(src).split('```').map((p,i)=>{
+    if(!(i%2))return inlineMd(p);
+    const nl=p.indexOf('\n'),lang=nl>=0?p.slice(0,nl).trim():'',code=nl>=0?p.slice(nl+1):p;
+    return `<div class="code"><div class="codebar"><span>${esc(lang||'code')}</span><button class="copy">Copy</button></div><pre><code>${esc(code.replace(/\n$/,''))}</code></pre></div>`;
+  }).join('');
+}
+document.addEventListener('click',e=>{const b=e.target.closest('.copy');if(!b)return;const code=b.closest('.code').querySelector('code').textContent;navigator.clipboard?.writeText(code).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200)}).catch(()=>toast('Copy failed'))});
+function statsHTML(s){if(!s)return '';return `<div class="stats"><span><b>${f(s.tps)}</b> tok/s</span><span>${s.genTok??'–'} tokens</span><span>first token ${f(s.ttft,2)}s</span>${s.pps?`<span>read ${f(s.pps,0)} tok/s</span>`:''}${s.loadSec>0.5?`<span>load ${f(s.loadSec)}s</span>`:''}${s.hw?`<span title="Peak use while this answer was written">GPU ${Math.round(s.hw.gpu)}%${s.hw.npuFound?` · NPU ${Math.round(s.hw.npu)}%`:''}</span>`:''}</div>`}
+
+/* ---------- chats ---------- */
+let chats=store.get('chats',[]);let curId=store.get('curChat',null);
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function cur(){let c=chats.find(c=>c.id===curId);if(!c){c={id:newId(),title:'New chat',messages:[]};chats.unshift(c);curId=c.id}return c}
+function saveChats(){store.set('curChat',curId);store.set('chats',chats.slice(0,60).map(c=>({...c,messages:c.messages.map(m=>({...m,images:m.images?.length?[]:undefined,streaming:false}))})))}
+function renderChatList(){
+  $('#chatList').innerHTML=chats.map(c=>`<div class="ci ${c.id===curId?'on':''}" data-id="${c.id}"><span>${esc(c.title)}</span><button class="x" data-del="${c.id}" title="Delete">✕</button></div>`).join('');
+}
+$('#chatList').onclick=e=>{const d=e.target.dataset.del;if(d){chats=chats.filter(c=>c.id!==d);if(curId===d)curId=chats[0]?.id||null;saveChats();renderChatList();renderChat();return}
+  const it=e.target.closest('.ci');if(it){curId=it.dataset.id;saveChats();renderChatList();renderChat();$('#sideL').classList.remove('show')}};
+$('#newChat').onclick=()=>{const c=cur();if(c.messages.length){const n={id:newId(),title:'New chat',messages:[]};chats.unshift(n);curId=n.id}saveChats();renderChatList();renderChat();$('#input').focus()};
+
+const STARTERS=[
+ ['Explain it simply','Explain how unified memory lets this mini PC run AI models that normally need a big graphics card.'],
+ ['Write code','Write a Python script that watches a folder and sorts new files into subfolders by type.'],
+ ['Think it through','A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Show your reasoning.'],
+ ['Plan something','Make a weekend plan to clean out and organize a two-car garage, with a shopping list.']
+];
+function renderChat(){
+  const c=cur(),box=$('#msgs');
+  if(!c.messages.length){
+    box.innerHTML=`<div class="empty"><div class="logo" style="width:52px;height:52px;margin:0 auto"></div><h3>Your private AI lab</h3><p class="muted">Running on the Radeon 8060S. Nothing leaves this computer.${installed.length?'':' Download a model in the Model Library to get started.'}</p>
+    <div class="starters">${STARTERS.map(s=>`<button data-p="${esc(s[1])}"><b>${s[0]}</b><span class="muted small">${esc(s[1].slice(0,70))}…</span></button>`).join('')}</div></div>`;
+    box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{$('#input').value=b.dataset.p;autosize();$('#input').focus()});
+    return;
+  }
+  box.innerHTML='';c.messages.forEach(m=>{const d=document.createElement('div');d.className='msg '+m.role;fillMsg(d,m);box.appendChild(d)});
+  box.scrollTop=box.scrollHeight;
+}
+function fillMsg(d,m){
+  const {text,think}=splitThink(m.content||'',m.think||'');let h='';
+  if(m.role==='assistant'){h+=`<div class="who">${esc(m.model||'')}</div>`;
+    if(think)h+=`<details class="think"${m.streaming&&!text?' open':''}><summary>${m.streaming&&!text?'Thinking…':'Thought process'}</summary><div>${md(think)}</div></details>`}
+  if(m.images?.length)h+=`<div class="imgs">${m.images.map(u=>`<img src="${u}" alt="">`).join('')}</div>`;
+  h+=`<div class="body">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(text)}${m.streaming?'<span class="caret"></span>':''}</div>`;
+  h+=statsHTML(m.stats);if(m.error)h+=`<div class="err">${esc(m.error)}</div>`;
+  d.innerHTML=h;
+}
+function nearBottom(){const b=$('#msgs');return b.scrollHeight-b.scrollTop-b.clientHeight<140}
+
+let abortCtl=null,pendingImgs=[];
+function setBusy(on){$('#sendBtn').textContent=on?'Stop':'Send';$('#sendBtn').classList.toggle('primary',!on)}
+async function send(){
+  if(abortCtl){abortCtl.abort();return}
+  const ta=$('#input'),text=ta.value.trim();if(!text&&!pendingImgs.length)return;
+  const model=$('#chatModel').value;if(!model){toast('Pick a model first. Download one in the Model Library tab.');return}
+  const c=cur();c.messages.push({role:'user',content:text,images:pendingImgs.slice()});
+  if(c.title==='New chat')c.title=(text||'Image question').slice(0,42);
+  ta.value='';autosize();pendingImgs=[];renderPending();
+  const am={role:'assistant',content:'',model,streaming:true};c.messages.push(am);renderChat();renderChatList();
+  const el=$('#msgs').lastElementChild,sys=systemText();
+  const msgs=(sys?[{role:'system',content:sys}]:[]).concat(c.messages.slice(0,-1).map(m=>({role:m.role,content:m.content,images:m.images})));
+  abortCtl=new AbortController();setBusy(true);let raf=0;hwStart();
+  try{const res=await streamChat({model,messages:msgs,signal:abortCtl.signal,onDelta:(t,th)=>{am.content=t;am.think=th;if(!raf)raf=requestAnimationFrame(()=>{raf=0;const stick=nearBottom();fillMsg(el,am);if(stick)$('#msgs').scrollTop=1e9})}});
+    am.content=res.text;am.think=res.think;am.stats=res.stats;const hw=hwEnd();if(hw)am.stats.hw=hw}
+  catch(e){am.error=e.name==='AbortError'?'Stopped.':friendlyErr(e)}
+  cancelAnimationFrame(raf);HW.peak=null;am.streaming=false;fillMsg(el,am);abortCtl=null;setBusy(false);saveChats();
+  if(B().type==='ollama'&&curTab==='running')refreshPs();
+}
+$('#sendBtn').onclick=send;
+$('#input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){abortCtl?.abort();arenaCtl?.abort();benchCtl?.abort()}});
+function autosize(){const t=$('#input');t.style.height='auto';t.style.height=Math.min(220,t.scrollHeight)+'px'}
+$('#input').addEventListener('input',autosize);
+$('#toggleL').onclick=()=>$('#sideL').classList.toggle('show');
+$('#toggleR').onclick=()=>$('#sideR').classList.toggle('show');
+
+/* images */
+function addImageFile(file){if(!file||!file.type.startsWith('image/'))return;const r=new FileReader();r.onload=()=>{pendingImgs.push(r.result);renderPending()};r.readAsDataURL(file)}
+function renderPending(){$('#pending').innerHTML=pendingImgs.map((u,i)=>`<img src="${u}" data-i="${i}" title="Click to remove">`).join('');$('#pending').querySelectorAll('img').forEach(i=>i.onclick=()=>{pendingImgs.splice(+i.dataset.i,1);renderPending()})}
+$('#attach').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{[...e.target.files].forEach(addImageFile);e.target.value=''};
+$('#input').addEventListener('paste',e=>{[...(e.clipboardData?.files||[])].forEach(addImageFile)});
+$('#chat').addEventListener('dragover',e=>e.preventDefault());
+$('#chat').addEventListener('drop',e=>{e.preventDefault();[...e.dataTransfer.files].forEach(addImageFile)});
+
+$('#exportChat').onclick=()=>{const c=cur();if(!c.messages.length)return toast('Nothing to export yet');
+  const t=`# ${c.title}\n\n`+c.messages.map(m=>`**${m.role==='user'?'You':(m.model||'AI')}:**\n\n${splitThink(m.content||'',m.think).text}\n`).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/markdown'}));a.download=c.title.replace(/[^\w -]/g,'').slice(0,40)+'.md';a.click()};
+
+/* ---------- settings panel ---------- */
+function renderModelSelects(){
+  const opts=installed.length?installed.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}${m.size?' · '+gb(m.size):''}</option>`).join(''):'<option value="">No models yet: see Model Library</option>';
+  const sel=$('#chatModel');sel.innerHTML=opts;
+  if(installed.some(m=>m.name===S.model))sel.value=S.model;else if(installed[0]){S.model=installed[0].name;sel.value=S.model}
+  modelInfo();renderArenaPickers(true);
+}
+function modelInfo(){const m=installed.find(x=>x.name===$('#chatModel').value),cat=CATALOG.find(c=>m&&(c.tag===m.name||c.tag+':latest'===m.name));
+  $('#modelInfo').textContent=m?[m.params,m.quant,cat?KINDS[cat.kinds[0]]:''].filter(Boolean).join(' · ')+(cat?'. '+cat.note:''):''}
+$('#chatModel').onchange=e=>{S.model=e.target.value;saveS();modelInfo()};
+function loadSettingsUI(){
+  $('#preset').value=S.preset;$('#system').value=systemText();
+  $('#temp').value=S.temp;$('#tempOut').textContent=S.temp;$('#ctx').value=S.ctx;$('#keep').value=S.keep;
+  $$('#thinkSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.think));
+  $('#budget').value=S.gpuGB;$('#budgetOut').textContent=S.gpuGB+' GB';$('#chipBudget').textContent=S.gpuGB+' GB';
+}
+$('#preset').onchange=e=>{S.preset=e.target.value;$('#system').value=systemText();saveS()};
+$('#system').oninput=e=>{S.preset='custom';S.custom=e.target.value;$('#preset').value='custom';saveS()};
+$('#temp').oninput=e=>{S.temp=+e.target.value;$('#tempOut').textContent=S.temp;saveS()};
+$('#ctx').onchange=e=>{S.ctx=+e.target.value;saveS();renderLibrary()};
+$('#keep').onchange=e=>{S.keep=e.target.value;saveS()};
+$('#thinkSeg').onclick=e=>{const v=e.target.dataset.v;if(!v)return;S.think=v;saveS();loadSettingsUI()};
+$('#budget').oninput=e=>{S.gpuGB=+e.target.value;saveS();loadSettingsUI();renderLibrary()};
+
+/* ---------- backend picker ---------- */
+$('#backendSel').innerHTML=Object.entries(BACKENDS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+$('#backendSel').value=S.backend;
+$('#backendSel').onchange=e=>{S.backend=e.target.value;saveS();connect()};
+$('#reconnect').onclick=connect;
+function renderBanner(){$('#connBanner').innerHTML=connected?'':`<div class="banner">Can't reach <b>${esc(B().label)}</b> at ${esc(B().url)}. Is it running? <a id="goSetup">Open Setup</a></div>`;const g=$('#goSetup');if(g)g.onclick=()=>showTab('setup')}
+function renderUrlRows(){$('#urlRows').innerHTML=Object.entries(BACKENDS).map(([k,v])=>`<div class="urlrow"><span>${v.label}</span><input data-k="${k}" value="${esc(S.urls[k]||v.url)}"><button data-reset="${k}" class="ghost small">Default</button></div>`).join('');
+  $$('#urlRows input').forEach(i=>i.onchange=()=>{S.urls[i.dataset.k]=i.value.trim();saveS();if(i.dataset.k===S.backend)connect()});
+  $$('#urlRows [data-reset]').forEach(b=>b.onclick=()=>{delete S.urls[b.dataset.reset];saveS();renderUrlRows();if(b.dataset.reset===S.backend)connect()});
+  $('#urlRows').insertAdjacentHTML('beforeend',`<div class="urlrow"><span>Hardware monitor</span><input id="monUrlIn" value="${esc(monUrl())}"><button id="monReset" class="ghost small">Default</button></div>`);
+  $('#monUrlIn').onchange=e=>{S.monUrl=e.target.value.trim();saveS();pollHw()};
+  $('#monReset').onclick=()=>{delete S.monUrl;saveS();renderUrlRows();pollHw()}}
+
+/* ---------- library ---------- */
+const pulls={};
+function fit(e){const need=e.size+e.kv*(S.ctx/1024)+1;const spill=Math.max(S.gpuGB,96-16);
+  if(need<=S.gpuGB)return{need,cls:'ok',label:'Fits'};if(need<=spill)return{need,cls:'warn',label:'Tight'};return{need,cls:'bad',label:'Too big'}}
+const estTps=e=>Math.max(1,Math.round(160/(e.active*e.bpp)));
+function renderLibrary(){
+  $('#filters').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button data-k="${k}" class="${k===libFilter?'on':''}">${v}</button>`).join('');
+  $$('#filters button').forEach(b=>b.onclick=()=>{libFilter=b.dataset.k;renderLibrary()});
+  const list=CATALOG.filter(e=>libFilter==='all'||e.kinds.includes(libFilter));
+  const isOl=B().type==='ollama';
+  $('#libGrid').innerHTML=list.map(e=>{const ft=fit(e),inst=isInstalled(e.tag),p=pulls[e.tag],pct=Math.min(100,ft.need/96*100);
+    return `<div class="card mcard"><div class="t"><div><h3>${esc(e.name)}</h3><div class="tag">${esc(e.tag)} · ${esc(e.maker)}</div></div>
+    <div class="badges">${inst?'<span class="badge inst">Installed</span>':''}<span class="badge ${ft.cls}">${ft.label}</span></div></div>
+    <div class="badges">${e.kinds.map(k=>`<span class="badge">${KINDS[k]}</span>`).join('')}</div>
+    <div class="small muted">${esc(e.note)}</div>
+    <div class="kv"><div><span>Size</span>${e.params}</div><div><span>Memory @ ${S.ctx/1024}K ctx</span>~${ft.need.toFixed(0)} GB</div><div><span>Est. speed</span>~${estTps(e)} tok/s</div></div>
+    <div class="meter" title="Share of 96 GB"><i style="width:${pct}%;background:var(--${ft.cls})"></i><i style="left:${S.gpuGB/96*100}%;width:2px;background:#fff8;border-radius:0"></i></div>
+    ${p?`<div class="prog" data-pull="${esc(e.tag)}">${pullText(p)}</div><div class="meter"><i data-pbar="${esc(e.tag)}" style="width:${p.pct||0}%;background:var(--blue)"></i></div>`:''}
+    <div class="acts">${inst?`<button class="primary" data-chat="${esc(e.tag)}">Chat</button>${isOl?`<button class="danger ghost" data-del="${esc(e.tag)}">Delete</button>`:''}`:
+      p?`<button data-cancel="${esc(e.tag)}">Cancel</button>`:`<button class="primary" data-pull-btn="${esc(e.tag)}" ${isOl?'':'disabled title="Downloads work with Ollama"'}>Download ${e.size} GB</button>`}</div></div>`}).join('');
+  const others=installed.filter(m=>!CATALOG.some(c=>c.tag===m.name||c.tag+':latest'===m.name));
+  $('#otherInstalled').innerHTML=others.length?others.map(m=>`<span class="chip" style="margin:0 6px 6px 0;display:inline-block">${esc(m.name)}${m.size?' · '+gb(m.size):''}${isOl?` <a style="cursor:pointer;color:var(--bad)" data-del="${esc(m.name)}">✕</a>`:''}</span>`).join(''):'None.';
+}
+function pullText(p){return p.total?`${esc(p.status)} · ${gb(p.done)} of ${gb(p.total)} (${p.pct.toFixed(0)}%)`:esc(p.status||'Starting…')}
+document.addEventListener('click',e=>{const t=e.target;
+  if(t.dataset.pullBtn)pull(t.dataset.pullBtn);
+  else if(t.dataset.cancel){pulls[t.dataset.cancel]?.ctl.abort()}
+  else if(t.dataset.del&&t.closest('#library'))delModel(t.dataset.del);
+  else if(t.dataset.chat){const m=installed.find(x=>x.name===t.dataset.chat||x.name===t.dataset.chat+':latest');if(m){S.model=m.name;saveS();renderModelSelects();showTab('chat');$('#input').focus()}}
+});
+async function pull(tag){
+  tag=tag.trim();if(!tag)return;
+  if(B().type!=='ollama')return toast('Downloading from here works with Ollama. In LM Studio, use its Discover tab.');
+  if(pulls[tag])return;const ctl=new AbortController();pulls[tag]={status:'Starting…',pct:0,ctl};renderLibrary();
+  try{const r=await fetch(B().url+'/api/pull',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:tag,name:tag,stream:true}),signal:ctl.signal});
+    if(!r.ok)throw new Error(await errText(r));let last=0;
+    for await(const l of readLines(r)){let j;try{j=JSON.parse(l)}catch(e){continue}if(j.error)throw new Error(j.error);const p=pulls[tag];p.status=j.status||p.status;
+      if(j.total){p.total=j.total;p.done=j.completed||0;p.pct=p.done/p.total*100}
+      const now=performance.now();if(now-last>250){last=now;const el=document.querySelector(`[data-pull="${CSS.escape(tag)}"]`),bar=document.querySelector(`[data-pbar="${CSS.escape(tag)}"]`);if(el)el.innerHTML=pullText(p);if(bar)bar.style.width=(p.pct||0)+'%';if(!el&&!CATALOG.some(c=>c.tag===tag))$('#customTag').placeholder=`${tag}: ${p.total?p.pct.toFixed(0)+'%':p.status}`}}
+    toast(tag+' is ready to use');
+  }catch(e){if(e.name!=='AbortError')toast('Download failed: '+friendlyErr(e));else toast('Download cancelled')}
+  delete pulls[tag];$('#customTag').placeholder='e.g. qwen3:14b or hf.co/user/repo:Q4_K_M';
+  try{await refreshModels()}catch(e){renderLibrary()}
+}
+async function delModel(tag){if(!confirm(`Delete ${tag} from this computer? You can download it again later.`))return;
+  try{await api('/api/delete',{method:'DELETE',body:JSON.stringify({model:tag,name:tag})});toast(tag+' deleted');await refreshModels()}catch(e){toast('Delete failed: '+friendlyErr(e))}}
+$('#customPull').onclick=()=>{const t=$('#customTag').value.trim();if(t){$('#customTag').value='';toast('Downloading '+t+'…');pull(t)}};
+$('#customTag').onkeydown=e=>{if(e.key==='Enter')$('#customPull').click()};
+
+/* ---------- running ---------- */
+let psTimer=null;
+async function refreshPs(){
+  const body=$('#psBody');
+  if(!connected){body.innerHTML='<tr><td colspan="6" class="muted">Not connected.</td></tr>';return}
+  if(B().type!=='ollama'){$('#loadedSum').textContent=B().label;$('#loadedNote').textContent='Live memory details are available with Ollama. LM Studio shows loaded models in its own window.';
+    body.innerHTML=installed.map(m=>`<tr><td>${esc(m.name)}</td><td colspan="5" class="muted">available</td></tr>`).join('');return}
+  try{const j=await api('/api/ps');const ms=j.models||[];let tot=0,vr=0;
+    body.innerHTML=ms.length?ms.map(m=>{tot+=m.size||0;vr+=m.size_vram||0;const pct=m.size?(m.size_vram/m.size*100):0;
+      const exp=m.expires_at?new Date(m.expires_at):null,yrs=exp&&exp.getFullYear()-new Date().getFullYear()>5;
+      return `<tr><td><b>${esc(m.name)}</b></td><td class="num">${gb(m.size||0)}</td><td class="num" style="color:${pct>=99?'var(--ok)':'var(--warn)'}">${pct.toFixed(0)}%</td><td class="num">${m.context_length?(m.context_length/1024).toFixed(0)+'K':'–'}</td><td class="small muted">${yrs?'Stays loaded':exp?exp.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'–'}</td><td><button class="small" data-unload="${esc(m.name)}">Unload</button></td></tr>`}).join(''):'<tr><td colspan="6" class="muted">Nothing loaded. Models load automatically when you chat.</td></tr>';
+    $('#loadedSum').textContent=`${ms.length} loaded · ${gb(tot)} in memory`;
+    $('#loadedBar').style.width=Math.min(100,tot/1e9/S.gpuGB*100)+'%';
+    $('#loadedNote').textContent=`${gb(vr)} on the GPU of your ${S.gpuGB} GB budget.`+(tot>vr+1e8?' Part of a model is running on the CPU, which is slower. Unload others or lower the context window.':'');
+    $$('[data-unload]').forEach(b=>b.onclick=()=>unload(b.dataset.unload));
+  }catch(e){body.innerHTML=`<tr><td colspan="6" class="err">${esc(friendlyErr(e))}</td></tr>`}
+}
+async function unload(name){try{await api('/api/generate',{method:'POST',body:JSON.stringify({model:name,keep_alive:0})});toast(name+' unloaded')}catch(e){toast(friendlyErr(e))}setTimeout(refreshPs,400)}
+$('#unloadAll').onclick=async()=>{if(B().type!=='ollama')return;try{const j=await api('/api/ps');for(const m of j.models||[])await unload(m.name)}catch(e){toast(friendlyErr(e))}};
+
+/* ---------- arena ---------- */
+let arenaPicks=store.get('arena',[]),arenaCtl=null;
+function renderArenaPickers(keep){
+  if(!arenaPicks.length)arenaPicks=installed.slice(0,2).map(m=>m.name);
+  const opts=installed.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('')||'<option value="">No models</option>';
+  $('#arenaPickers').innerHTML=arenaPicks.map((p,i)=>`<div class="row"><select data-i="${i}">${opts}</select>${arenaPicks.length>2?`<button class="ghost small" data-rm="${i}">✕</button>`:''}</div>`).join('');
+  $$('#arenaPickers select').forEach(s=>{const i=+s.dataset.i;if(installed.some(m=>m.name===arenaPicks[i]))s.value=arenaPicks[i];else arenaPicks[i]=s.value;s.onchange=()=>{arenaPicks[i]=s.value;store.set('arena',arenaPicks)}});
+  $$('#arenaPickers [data-rm]').forEach(b=>b.onclick=()=>{arenaPicks.splice(+b.dataset.rm,1);renderArenaPickers()});
+}
+$('#arenaAdd').onclick=()=>{if(arenaPicks.length>=4)return toast('Up to 4 models at once');arenaPicks.push(installed[0]?.name||'');renderArenaPickers()};
+$('#arenaStop').onclick=()=>arenaCtl?.abort();
+$('#arenaRun').onclick=async()=>{
+  const prompt=$('#arenaPrompt').value.trim();if(!prompt)return toast('Type a question first');
+  const picks=arenaPicks.filter(Boolean);if(!picks.length)return toast('Download a model first');
+  const cols=$('#arenaCols');cols.style.gridTemplateColumns=`repeat(${Math.min(picks.length,window.innerWidth<800?1:4)},1fr)`;
+  cols.innerHTML=picks.map((m,i)=>`<div class="card arena-col" id="ac${i}"><div class="who">${esc(m)}</div><div class="small muted st">Waiting…</div><div class="out body"></div></div>`).join('');
+  arenaCtl=new AbortController();$('#arenaRun').disabled=true;$('#arenaStop').disabled=false;
+  const sys=systemText(),msgs=(sys?[{role:'system',content:sys}]:[]).concat([{role:'user',content:prompt}]);
+  const results=[];
+  const runOne=async(m,i)=>{const col=$('#ac'+i),out=col.querySelector('.out'),st=col.querySelector('.st');st.textContent='Loading and thinking…';let raf=0;
+    try{const r=await streamChat({model:m,messages:msgs,signal:arenaCtl.signal,onDelta:(t,th)=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;const s=splitThink(t,th);out.innerHTML=s.text?md(s.text):'<span class="muted">Thinking…</span>';st.textContent='Writing…'})}});
+      cancelAnimationFrame(raf);const s=splitThink(r.text,r.think);out.innerHTML=(s.think?`<details class="think"><summary>Thought process</summary><div>${md(s.think)}</div></details>`:'')+md(s.text);st.innerHTML=statsHTML(r.stats);results[i]=r.stats.tps||0}
+    catch(e){cancelAnimationFrame(raf);st.innerHTML=`<span class="err">${esc(e.name==='AbortError'?'Stopped':friendlyErr(e))}</span>`}};
+  if($('#arenaMode').value==='par')await Promise.all(picks.map(runOne));else for(let i=0;i<picks.length;i++){if(arenaCtl.signal.aborted)break;await runOne(picks[i],i)}
+  const best=results.reduce((bi,v,i,a)=>v>(a[bi]||0)?i:bi,0);if(results[best])$('#ac'+best).classList.add('win');
+  arenaCtl=null;$('#arenaRun').disabled=false;$('#arenaStop').disabled=true;
+};
+
+/* ---------- benchmark ---------- */
+const FILL='Unified memory means the processor and the graphics engine share one large pool of fast memory instead of each having their own. This matters for AI because large language models must keep all of their weights in memory that the accelerator can read quickly. ';
+const TESTS={
+ short:{label:'Quick reply',max:128,prompt:'In three or four sentences, explain why memory bandwidth limits how fast a language model can generate text.'},
+ long:{label:'Long writing',max:512,prompt:'Write a 400-word short story about a lighthouse keeper who discovers the light has started sending messages.'},
+ code:{label:'Coding',max:400,prompt:'Write a Python function that parses a CSV of transactions (date, description, amount), groups spending by month and category keyword, and prints a summary table. Include a short example.'},
+ prompt:{label:'Big prompt',max:96,prompt:FILL.repeat(55)+'\n\nSummarize the text above in two sentences.',ctx:8192}
+};
+let benchHist=store.get('bench',[]),benchCtl=null;
+function renderBenchModels(){const sel=new Set(store.get('benchSel',[]));
+  $('#benchModels').innerHTML=installed.length?installed.map(m=>`<label class="chip" style="margin:0;cursor:pointer;color:var(--text)"><input type="checkbox" value="${esc(m.name)}" ${sel.has(m.name)?'checked':''} style="margin-right:6px;vertical-align:-2px">${esc(m.name)}</label>`).join(''):'<span class="muted">No models installed yet.</span>';
+  $$('#benchModels input').forEach(i=>i.onchange=()=>store.set('benchSel',$$('#benchModels input:checked').map(x=>x.value)))}
+function renderBench(){const max=Math.max(1,...benchHist.map(r=>r.tps||0));
+  $('#benchBody').innerHTML=benchHist.length?benchHist.map(r=>`<tr><td class="small muted">${new Date(r.t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</td><td><b>${esc(r.model)}</b></td><td>${esc(r.test)}</td><td class="num">${f(r.load)}s</td><td class="num">${f(r.pps,0)}</td><td class="num">${f(r.ttft,2)}s</td><td class="num"><b style="color:var(--ok)">${f(r.tps)}</b></td><td><div class="bar" style="width:${(r.tps||0)/max*100}%"></div></td><td class="num small">${r.hw?`${Math.round(r.hw.gpu)}% / ${r.hw.npuFound?Math.round(r.hw.npu)+'%':'–'}`:'–'}</td></tr>`).join(''):'<tr><td colspan="9" class="muted">No runs yet.</td></tr>'}
+$('#benchClear').onclick=()=>{benchHist=[];store.set('bench',benchHist);renderBench()};
+$('#benchStop').onclick=()=>benchCtl?.abort();
+$('#benchRun').onclick=async()=>{
+  const models=$$('#benchModels input:checked').map(x=>x.value);if(!models.length)return toast('Tick at least one model');
+  const test=TESTS[$('#benchTest').value];benchCtl=new AbortController();$('#benchRun').disabled=true;$('#benchStop').disabled=false;
+  for(const m of models){if(benchCtl.signal.aborted)break;$('#benchStatus').textContent=`Running ${m}…`;
+    try{hwStart();const r=await streamChat({model:m,messages:[{role:'user',content:test.prompt}],signal:benchCtl.signal,temp:0,maxTok:test.max,ctx:test.ctx||Math.max(4096,S.ctx)});
+      const s=r.stats;benchHist.unshift({t:Date.now(),model:m,test:test.label,load:s.loadSec||0,pps:s.pps,ttft:s.ttft,tps:s.tps,hw:hwEnd()});benchHist=benchHist.slice(0,40);store.set('bench',benchHist);renderBench()}
+    catch(e){HW.peak=null;if(e.name!=='AbortError')toast(m+': '+friendlyErr(e))}}
+  $('#benchStatus').textContent=benchCtl.signal.aborted?'Stopped.':'Done. Run it twice: the first run includes loading the model from disk.';
+  benchCtl=null;$('#benchRun').disabled=false;$('#benchStop').disabled=true;
+};
+
+/* ---------- hardware monitor (talks to halo-monitor.ps1) ---------- */
+const HW={on:false,data:null,hist:{cpu:[],gpu:[],npu:[]},peak:null,busy:false,timer:null};
+const monUrl=()=>(S.monUrl||'http://localhost:11500').replace(/\/+$/,'');
+async function pollHw(){
+  if(HW.busy)return;HW.busy=true;
+  try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),6000);
+    const r=await fetch(monUrl()+'/stats',{cache:'no-store',signal:ctl.signal});clearTimeout(to);
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    HW.on=true;HW.data=d;
+    const push=(k,v)=>{const a=HW.hist[k];a.push(v==null?null:v);if(a.length>60)a.shift()};
+    push('cpu',d.cpu?.util);push('gpu',d.gpu?.util);push('npu',d.npu?.found?d.npu.util:null);
+    if(HW.peak){HW.peak.gpu=Math.max(HW.peak.gpu,d.gpu?.util||0);HW.peak.npu=Math.max(HW.peak.npu,d.npu?.util||0);HW.peak.npuFound=!!d.npu?.found;HW.peak.seen=true}
+  }catch(e){HW.on=false}
+  HW.busy=false;renderHw();
+  clearTimeout(HW.timer);HW.timer=setTimeout(pollHw,HW.on?1500:8000);
+}
+const hwStart=()=>{HW.peak={gpu:0,npu:0,npuFound:false,seen:false}};
+const hwEnd=()=>{const p=HW.peak;HW.peak=null;return p&&p.seen?p:null};
+function setMini(id,v){const el=$(id);el.querySelector('b').style.width=(v==null?0:Math.min(100,v))+'%';el.querySelector('span').textContent=v==null?'–':Math.round(v)+'%'}
+function spark(id,arr,color){
+  const c=$(id),w=c.clientWidth,h=c.clientHeight,dpr=window.devicePixelRatio||1;if(!w)return;
+  c.width=w*dpr;c.height=h*dpr;const x=c.getContext('2d');x.scale(dpr,dpr);
+  x.strokeStyle='#2a313d';x.lineWidth=1;x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();
+  const n=60,step=w/(n-1),off=n-arr.length;let first=null,last=0;x.beginPath();
+  arr.forEach((v,i)=>{if(v==null)return;const px=(off+i)*step,py=h-2-(Math.min(100,v)/100)*(h-4);if(first==null){x.moveTo(px,py);first=px}else x.lineTo(px,py);last=px});
+  if(first==null)return;x.strokeStyle=color;x.lineWidth=2;x.stroke();
+  x.lineTo(last,h);x.lineTo(first,h);x.closePath();x.globalAlpha=.15;x.fillStyle=color;x.fill();x.globalAlpha=1;
+}
+const procList=ps=>(ps||[]).length?'Using it now: '+ps.map(p=>`${esc(p.name)} ${Math.round(p.util)}%`).join(' · '):'';
+function renderHw(){
+  const d=HW.data,on=HW.on&&d;
+  $('#hwMini').classList.toggle('off',!on);
+  $('#hwMini').title=on?'Live hardware use. Click for details.':'Hardware monitor is not running. Click for how to start it.';
+  setMini('#hmCpu',on?d.cpu?.util:null);setMini('#hmGpu',on?d.gpu?.util:null);setMini('#hmNpu',on&&d.npu?.found?d.npu.util:null);
+  $('#hmNpu').classList.toggle('live',!!(on&&d.npu?.util>1));
+  if(curTab!=='hardware')return;
+  $('#hwOffline').innerHTML=on?'':`<div class="banner" style="margin:0 0 12px">The hardware monitor isn't running. Open Halo Lab with <b>Start Halo Lab.bat</b> (it starts the monitor for you) and this page fills in within a few seconds. Details are in Setup.</div>`;
+  if(!on){['#npuBig','#gpuBig','#cpuBig'].forEach(i=>$(i).textContent='–');$('#npuState').textContent='Waiting for the hardware monitor…';$('#npuState').className='npustate';$('#npuBadge').textContent='–';return}
+  const n=d.npu||{},g=d.gpu||{},c=d.cpu||{},r=d.ram||{};
+  // NPU
+  $('#npuName').textContent=n.name?`${n.name}${n.status&&n.status!=='OK'?' · status: '+n.status:''}`:'Ryzen AI NPU';
+  let badge,bcls,state,live=false;
+  if(!n.present&&!n.found){badge='Not found';bcls='bad';state='Windows doesn\'t list an NPU. Install the latest AMD chipset or Ryzen AI NPU driver from amd.com, then restart.'}
+  else if(!n.found){badge='No data';bcls='warn';state='The NPU is installed, but Windows isn\'t reporting its activity. This needs Windows 11 24H2 or newer and an up-to-date AMD NPU driver. If Task Manager shows an NPU graph, restart the monitor.'}
+  else if(n.util>1){badge='Active';bcls='ok';live=true;state='The NPU is working right now.'}
+  else{badge='Idle';bcls='';state='Idle: nothing is using the NPU right now.'+(S.backend!=='lemonade'?` ${B().label} runs models on the GPU, so this is expected while you chat.`:' Load an NPU or Hybrid model in Lemonade to use it.')}
+  $('#npuBadge').textContent=badge;$('#npuBadge').className='badge '+bcls;
+  $('#npuBig').textContent=n.found?Math.round(n.util)+'%':'–';
+  $('#npuState').textContent=state;$('#npuState').className='npustate'+(live?' live':'');
+  $('#npuProcs').innerHTML=procList(n.procs);
+  // GPU
+  $('#gpuBig').textContent=g.util!=null?Math.round(g.util)+'%':'–';
+  $('#gpuName').textContent=g.name||'Radeon 8060S';
+  const eng=Object.entries(g.engines||{}).sort((a,b)=>b[1]-a[1])[0];
+  $('#gpuEng').textContent=eng&&eng[1]>1?`busiest: ${eng[0]} ${Math.round(eng[1])}%`:'';
+  $('#gpuProcs').innerHTML=procList(g.procs);
+  // CPU
+  $('#cpuBig').textContent=c.util!=null?Math.round(c.util)+'%':'–';
+  $('#cpuName').textContent=(c.name||'Ryzen AI Max+ 395')+(c.threads?` · ${c.threads} threads`:'');
+  // memory
+  if(r.totalGB){$('#ramBar').style.width=(r.usedGB/r.totalGB*100)+'%';$('#ramTxt').textContent=`${r.usedGB.toFixed(1)} of ${r.totalGB.toFixed(0)} GB in use (what Windows can see)`}
+  const vt=g.dedicatedTotalGB;
+  if(g.dedicatedGB!=null){$('#vramBar').style.width=Math.min(100,g.dedicatedGB/(vt||S.gpuGB)*100)+'%';
+    $('#vramTxt').innerHTML=`${g.dedicatedGB.toFixed(1)} GB used${vt?` of ${vt.toFixed(0)} GB set aside for the GPU`:` of your ${S.gpuGB} GB budget`}`+(vt&&Math.abs(vt-S.gpuGB)>=4?` · <a style="cursor:pointer;color:var(--acc2)" id="syncBudget">Use ${vt.toFixed(0)} GB as the Library budget</a>`:'');
+    const sb=$('#syncBudget');if(sb)sb.onclick=()=>{S.gpuGB=Math.round(vt/4)*4||S.gpuGB;saveS();loadSettingsUI();renderLibrary();renderHw();toast('GPU budget set to '+S.gpuGB+' GB')}}
+  $('#sharedTxt').textContent=g.sharedGB!=null?(g.sharedGB>0.5?`${g.sharedGB.toFixed(1)} GB. The model didn't fully fit in GPU memory, so part of it is using regular RAM (slower).`:'None. Everything fits in GPU memory.'):'–';
+  spark('#cvNpu',HW.hist.npu,'#a974ff');spark('#cvGpu',HW.hist.gpu,'#ff8c42');spark('#cvCpu',HW.hist.cpu,'#5aa9ff');
+}
+$('#hwMini').onclick=()=>showTab('hardware');
+window.addEventListener('resize',()=>{if(curTab==='hardware')renderHw()});
+
+/* ---------- tabs ---------- */
+let curTab='chat';
+function showTab(t){curTab=t;$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));$$('main section').forEach(s=>s.classList.toggle('on',s.id===t));
+  clearInterval(psTimer);if(t==='running'){refreshPs();psTimer=setInterval(refreshPs,3000)}
+  if(t==='setup')renderUrlRows();if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware')renderHw()}
+$('#tabs').onclick=e=>{const t=e.target.dataset.tab;if(t)showTab(t)};
+
+/* ---------- start ---------- */
+loadSettingsUI();renderChatList();renderChat();renderLibrary();renderBench();connect();pollHw();
+</script>
+</body>
+</html>
