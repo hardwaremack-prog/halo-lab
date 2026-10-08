@@ -1,6 +1,6 @@
 # Halo Lab
 
-![icon](halo-lab-icon.png)
+<img src="halo-lab-icon.png" alt="Halo Lab icon" width="96">
 
 A local AI dashboard for AMD **Ryzen AI Max+ 395** ("Strix Halo") mini PCs such as the
 GMKtec EVO-X2. These machines share up to 96 GB of fast memory with the Radeon 8060S GPU,
