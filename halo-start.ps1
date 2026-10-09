@@ -2,7 +2,13 @@
 # shows a message and writes the details to startup.log in this folder.
 # It also (re)creates the Halo Lab icon on the Desktop so it always points here.
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$log = Join-Path $here 'startup.log'
+$url = 'http://localhost:11500/'
+
+# Already running? Just open it in the browser.
+try {
+  $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 ($url + 'api/hl/ping')
+  if ($r.Content -match '"app"\s*:\s*"halo-lab"') { Start-Process $url; exit 0 }
+} catch {}
 
 try {
   $desk = [Environment]::GetFolderPath('Desktop')
@@ -17,11 +23,21 @@ try {
   $sc.Save()
 } catch {}
 
+# The log is opened and closed for each line, so it is never left locked.
+$log = Join-Path $here 'startup.log'
+function Write-Log([string]$text, [switch]$New) {
+  $line = '{0}  {1}' -f (Get-Date -Format s), $text
+  try {
+    if ($New) { Set-Content -Path $log -Value $line -Encoding UTF8 -ErrorAction Stop }
+    else { Add-Content -Path $log -Value $line -Encoding UTF8 -ErrorAction Stop }
+  } catch {}
+}
+
 try {
-  ('{0}  Starting Halo Lab (PowerShell {1})' -f (Get-Date -Format s), $PSVersionTable.PSVersion) | Out-File -FilePath $log -Encoding utf8
-  & (Join-Path $here 'halo-server.ps1') @args 2>&1 | ForEach-Object { ('{0}  {1}' -f (Get-Date -Format s), $_) } | Out-File -FilePath $log -Append -Encoding utf8
+  Write-Log ('Starting Halo Lab (PowerShell {0})' -f $PSVersionTable.PSVersion) -New
+  & (Join-Path $here 'halo-server.ps1') @args 2>&1 | ForEach-Object { Write-Log ([string]$_) }
 } catch {
-  ($_ | Out-String) | Out-File -FilePath $log -Append -Encoding utf8
+  Write-Log ($_ | Out-String)
   try {
     Add-Type -AssemblyName PresentationFramework
     [void][System.Windows.MessageBox]::Show(("Halo Lab couldn't start.`n`n" + $_.Exception.Message + "`n`nDetails are in:`n" + $log), 'Halo Lab')
