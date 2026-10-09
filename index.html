@@ -330,7 +330,8 @@ td.num{font-family:var(--mono)}
           <tr><td><b>Qwen3 4B</b></td><td class="num">~20 tok/s</td><td>Quick everyday answers.</td></tr>
           <tr><td><b>Llama 3.2 3B</b></td><td class="num">~25 tok/s</td><td>Small and quick (speed is an estimate).</td></tr>
           <tr><td><b>Qwen3 1.7B</b></td><td class="num">~40 tok/s</td><td>Tiny and fast.</td></tr>
-          <tr><td><b>DeepSeek-R1 8B</b></td><td class="num">–</td><td>Lemonade Hybrid (NPU reads, GPU writes).</td></tr>
+          <tr><td><b>DeepSeek-R1 8B</b></td><td class="num">~12 tok/s</td><td>Reasoning model. One click in FastFlowLM (also in Lemonade as a Hybrid model).</td></tr>
+          <tr><td><b>DeepSeek-R1 0528 8B</b></td><td class="num">~12 tok/s</td><td>Newer DeepSeek reasoning model on Qwen3 8B.</td></tr>
         </tbody></table>
         <p class="small muted" style="margin:8px 0 0">The GPU is about 3× faster than the NPU; the NPU's strength is very low power and leaving the GPU free. NPU speeds are FastFlowLM's published numbers from a smaller Ryzen AI chip with the same type of NPU, not measured on this PC.</p>
       </div>
@@ -515,7 +516,8 @@ const NPU_MODELS=[
  {name:'Qwen3 4B',flm:'qwen3:4b',tps:'~20',note:'Quick everyday answers while sipping power.'},
  {name:'Llama 3.2 3B',flm:'llama3.2:3b',lemon:'Llama-3.2-3B-Instruct-Hybrid',tps:'~25',note:'Small and quick. Also in Lemonade as a Hybrid model (NPU reads, GPU writes).'},
  {name:'Qwen3 1.7B',flm:'qwen3:1.7b',tps:'~42',note:'Tiny and fast for simple jobs. Measured 41.6 tok/s on an EVO-X2 NPU.'},
- {name:'DeepSeek-R1 Distill 8B',lemon:'DeepSeek-R1-Distill-Llama-8B-Hybrid',tps:'–',note:'Reasoning model, in Lemonade as a Hybrid model.'}
+ {name:'DeepSeek-R1 Distill 8B',flm:'deepseek-r1:8b',lemon:'DeepSeek-R1-Distill-Llama-8B-Hybrid',tps:'~12',note:'Reasoning model (thinks before answering), built on Llama 3.1 8B. Same model as Lemonade\'s DeepSeek-R1-Distill-Llama-8B-Hybrid.'},
+ {name:'DeepSeek-R1 0528 8B',flm:'deepseek-r1-0528:8b',tps:'~12',note:'Newer DeepSeek reasoning model built on Qwen3 8B. Smarter than the Llama-based one.'}
 ];
 const KINDS={all:'All',chat:'General',reason:'Reasoning',code:'Coding',vision:'Sees images',fast:'Fast'};
 let libFilter='all';
