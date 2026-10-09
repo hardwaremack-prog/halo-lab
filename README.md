@@ -68,7 +68,7 @@ To quit, right-click the orange ring and choose **Quit Halo Lab**.
 | File | What it is |
 | --- | --- |
 | `Halo Lab.html` | The dashboard. `index.html` is the same file. |
-| `halo-server.ps1` | The background program. It serves the dashboard at `http://localhost:11500`, reads the CPU/GPU/NPU counters Task Manager uses, installs the engine, downloads models and starts or stops the engine. It only listens on this computer and needs nothing installed (it uses the PowerShell built into Windows). |
+| `halo-server.ps1` | The background program. It serves the dashboard at `http://localhost:11500`, reads the CPU/GPU/NPU counters Task Manager uses, installs the engine, downloads models and starts or stops the engine. It listens only on this computer unless you turn on home-network access in Setup, and it needs nothing installed (it uses the PowerShell built into Windows). |
 | `halo-start.ps1` | The launcher the desktop icon runs. It keeps the icon pointing at this folder and, if Halo Lab can't start, shows a message and writes `startup.log`. |
 | `Start Halo Lab.bat` | Starts Halo Lab, the same as the desktop icon. |
 | `Fix Ollama connection.bat` | Only needed if you choose Ollama as the engine. |
@@ -76,6 +76,15 @@ To quit, right-click the orange ring and choose **Quit Halo Lab**.
 Halo Lab keeps the engine and models in `%LOCALAPPDATA%\HaloLab` unless you choose another models
 folder in Setup. The engine runs at `http://127.0.0.1:11600`, so other programs on this computer
 can use the loaded model through its OpenAI-compatible API.
+
+## Opening Halo Lab from other devices
+
+Setup → **Network access** lets you change the port (11500 by default) and turn on
+**Let other devices on my home network open Halo Lab**. Windows asks for permission once; Halo Lab then
+reserves the address and adds a firewall rule that only lets in devices on your local network, not the
+internet. Setup shows the address to type on a phone, tablet or Raspberry Pi (for example
+`http://192.168.1.50:11500/`). From other devices you can chat, compare models and watch the meters;
+closing apps, deleting models and changing settings only work on the Halo Lab PC itself.
 
 ## About the NPU
 

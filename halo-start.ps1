@@ -2,12 +2,17 @@
 # shows a message and writes the details to startup.log in this folder.
 # It also (re)creates the Halo Lab icon on the Desktop so it always points here.
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$url = 'http://localhost:11500/'
+$port = 11500
+try {
+  $cf = Join-Path $env:LOCALAPPDATA 'HaloLab\config.json'
+  if (Test-Path $cf) { $c0 = Get-Content $cf -Raw | ConvertFrom-Json; if ([int]$c0.port -ge 1024) { $port = [int]$c0.port } }
+} catch {}
+$url = "http://localhost:$port/"
 
 # Already running? Just open it in the browser.
 try {
   $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 ($url + 'api/hl/ping')
-  if ($r.Content -match '"app"\s*:\s*"halo-lab"') { Start-Process $url; exit 0 }
+  if ($r.Content -match '"app"\s*:\s*"halo-lab"') { if ($args -notcontains '-NoBrowser') { Start-Process $url }; exit 0 }
 } catch {}
 
 try {

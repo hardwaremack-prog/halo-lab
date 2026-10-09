@@ -1,16 +1,24 @@
 # Halo Lab server
-# - Serves the Halo Lab dashboard at http://localhost:11500/
+# - Serves the Halo Lab dashboard at http://localhost:11500/ (port can be changed in Setup)
 # - Shares live CPU / GPU / NPU use with it
 # - Installs the AI engine (llama.cpp, Vulkan build for the Radeon GPU) the first time
 # - Downloads models from Hugging Face and loads them into the GPU
-# Only this computer can reach it. Quit from the tray icon (right-click > Quit).
+# Only this computer can reach it unless home-network access is turned on in Setup. Quit from the tray icon (right-click > Quit).
 # Works with the Windows PowerShell 5.1 that comes with Windows. Keep this file plain ASCII.
 
 param([switch]$NoBrowser)
 
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Port = 11500
 $IsWin = ($env:OS -eq 'Windows_NT')
+if ($env:HALO_DATA) { $Data = $env:HALO_DATA }
+elseif ($IsWin) { $Data = Join-Path $env:LOCALAPPDATA 'HaloLab' }
+else { $Data = Join-Path $HOME '.halolab' }
+# port and home-network access are set in Setup > Network access (saved in config.json)
+$Port = 11500; $Lan = $false
+try {
+  $cf = Join-Path $Data 'config.json'
+  if (Test-Path $cf) { $c0 = Get-Content $cf -Raw | ConvertFrom-Json; if ([int]$c0.port -ge 1024 -and [int]$c0.port -le 65535) { $Port = [int]$c0.port }; if ($c0.lan) { $Lan = $true } }
+} catch {}
 $Url = "http://localhost:$Port/"
 
 # ---------- already running? just open it ----------
@@ -29,9 +37,6 @@ if ($env:OS -eq 'Windows_NT') {
   } catch {}
 }
 
-if ($env:HALO_DATA) { $Data = $env:HALO_DATA }
-elseif ($IsWin) { $Data = Join-Path $env:LOCALAPPDATA 'HaloLab' }
-else { $Data = Join-Path $HOME '.halolab' }
 foreach ($d in @($Data, (Join-Path $Data 'engine'), (Join-Path $Data 'models'), (Join-Path $Data 'logs'))) {
   if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
 }
@@ -44,6 +49,34 @@ function Get-HLConfig($sync) {
   $f = Join-Path $sync.data 'config.json'
   if (Test-Path $f) { try { return (Get-Content $f -Raw | ConvertFrom-Json) } catch {} }
   return [pscustomobject]@{ modelsDir = '' }
+}
+
+function Save-HLConfig($sync, $changes) {
+  $c = [ordered]@{}
+  $old = Get-HLConfig $sync
+  foreach ($pr in $old.PSObject.Properties) { $c[$pr.Name] = $pr.Value }
+  foreach ($k in $changes.Keys) { $c[$k] = $changes[$k] }
+  ($c | ConvertTo-Json) | Set-Content -Path (Join-Path $sync.data 'config.json') -Encoding UTF8
+}
+
+function Get-LanAddresses {
+  $out = @()
+  try {
+    foreach ($a in (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop)) {
+      if ($a.IPAddress -like '127.*' -or $a.IPAddress -like '169.254.*') { continue }
+      if ($a.InterfaceAlias -match '(?i)vEthernet|Loopback|WSL|Hyper-V|VirtualBox|VMware|Tailscale|WireGuard') { continue }
+      $out += $a.IPAddress
+    }
+  } catch {}
+  return $out
+}
+
+function Get-NetworkInfo($sync) {
+  $port = [int]$sync.port
+  $acl = $false; $fw = $false
+  try { $acl = [bool]((& netsh.exe http show urlacl url=("http://+:$port/") 2>$null | Out-String) -match [regex]::Escape("http://+:$port/")) } catch {}
+  try { & netsh.exe advfirewall firewall show rule name='Halo Lab' 2>$null | Out-Null; $fw = ($LASTEXITCODE -eq 0) } catch {}
+  return [ordered]@{ port = $port; lanWanted = [bool]$sync.lan; lanActive = [bool]$sync.lanActive; lanError = $sync.lanError; aclReady = $acl; firewallRule = $fw; addresses = @(Get-LanAddresses) }
 }
 
 function Get-ModelsDir($sync) {
@@ -755,9 +788,17 @@ $ServerCode = {
     Get-Process -Name 'llama-server' -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($engDir) } | Stop-Process -Force -ErrorAction SilentlyContinue
   } catch {}
 
-  $listener = New-Object System.Net.HttpListener
-  $listener.Prefixes.Add($sync.url)
-  try { $listener.Start() } catch { $sync.error = "Could not start on port $($sync.port): $($_.Exception.Message)"; return }
+  $listener = $null
+  if ($sync.lan) {
+    # home-network access: needs a one-time URL reservation (made from Setup > Network access)
+    try { $listener = New-Object System.Net.HttpListener; $listener.Prefixes.Add("http://+:$($sync.port)/"); $listener.Start(); $sync.lanActive = $true }
+    catch { $sync.lanError = $_.Exception.Message; try { $listener.Close() } catch {}; $listener = $null }
+  }
+  if (-not $listener) {
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add($sync.url)
+    try { $listener.Start() } catch { $sync.error = "Could not start on port $($sync.port): $($_.Exception.Message)"; return }
+  }
   $sync.ready = $true
 
   while ($listener.IsListening -and -not $sync.stop) {
@@ -772,6 +813,9 @@ $ServerCode = {
     $method = $req.HttpMethod
     try {
       if ($method -eq 'OPTIONS') { $res.StatusCode = 204; $res.Close(); continue }
+      # other devices on the home network can chat and watch the meters, but not change this PC
+      if (-not $req.IsLocal -and $path -match '^/api/hl/(closeapp|quit|delete|config|network|engine/install|flm/install|clear)$' -and $method -eq 'POST') {
+        Send-Json $res @{ error = 'That only works on the Halo Lab PC itself.' } 403; continue }
       switch -Regex ($path) {
         '^/$|^/index\.html$' {
           $f = Join-Path $sync.root 'Halo Lab.html'
@@ -933,9 +977,35 @@ $ServerCode = {
             try { if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null } }
             catch { Send-Json $res @{ error = "Couldn't use that folder: $($_.Exception.Message)" } 400; break }
           }
-          $cfg = [ordered]@{ modelsDir = $dir }
-          ($cfg | ConvertTo-Json) | Set-Content -Path (Join-Path $sync.data 'config.json') -Encoding UTF8
+          Save-HLConfig $sync @{ modelsDir = $dir }
           Send-Json $res @{ ok = $true }; break }
+        '^/api/hl/network$' {
+          if ($method -ne 'POST') { $ni = Get-NetworkInfo $sync; $ni.isLocal = [bool]$req.IsLocal; Send-Json $res $ni; break }
+          $b = Read-Body $req
+          $np = [int]$b.port; $lan = [bool]$b.lan
+          if ($np -lt 1024 -or $np -gt 65535) { Send-Json $res @{ error = 'Pick a port between 1024 and 65535.' } 400; break }
+          if ($np -ne [int]$sync.port) {
+            $busy = $false
+            try { $t = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Any, $np); $t.Start(); $t.Stop() } catch { $busy = $true }
+            if ($busy) { Send-Json $res @{ error = "Port $np is already used by another program. Try another." } 400; break }
+          }
+          # one Windows permission prompt: reserve the address and allow it through the firewall (home network only)
+          $who = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+          $cmd = "netsh http delete urlacl url=http://+:$($sync.port)/ | Out-Null; netsh advfirewall firewall delete rule name='Halo Lab' | Out-Null; "
+          if ($lan) { $cmd += "netsh http add urlacl url=http://+:$np/ user='$who' | Out-Null; netsh advfirewall firewall add rule name='Halo Lab' dir=in action=allow protocol=TCP localport=$np remoteip=localsubnet | Out-Null" }
+          $needAdmin = $lan -or [bool]$sync.lan
+          if ($needAdmin) {
+            try { $p = Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -Wait -PassThru -ArgumentList @('-NoProfile', '-Command', $cmd) }
+            catch { Send-Json $res @{ error = 'Windows permission was not given, so nothing changed.' } 400; break }
+          }
+          Save-HLConfig $sync @{ port = $np; lan = $lan }
+          Send-Json $res ([ordered]@{ ok = $true; port = $np; lan = $lan; restarting = $true })
+          # restart on the new settings
+          $starter = Join-Path $sync.root 'halo-start.ps1'
+          Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', "Start-Sleep 4; & '$starter' -NoBrowser")
+          Stop-Model
+          try { Stop-Flm $sync } catch {}
+          $sync.stop = $true; break }
         '^/api/hl/quit$' {
           Stop-Model
           try { Stop-Flm $sync } catch {}
@@ -954,7 +1024,7 @@ $ServerCode = {
 
 # ---------- start ----------
 $sync = [hashtable]::Synchronized(@{
-  root = $Root; data = $Data; port = $Port; url = $Url; isWin = $IsWin
+  root = $Root; data = $Data; port = $Port; url = $Url; isWin = $IsWin; lan = $Lan; lanActive = $false; lanError = $null
   lib = $Lib; engineCode = $EngineJob.ToString(); pullCode = $PullJob.ToString(); proxyCode = $ProxyJob.ToString()
   flmInstallCode = $FlmInstallJob.ToString(); flmRunCode = $FlmRunJob.ToString()
   flm = [hashtable]::Synchronized(@{ status = $null; done = 0L; total = 0L; baseDone = 0L; fileDone = 0L; cancel = $false; error = $null; validate = $null; state = 'stopped'; tag = $null; servePid = $null; pulls = [hashtable]::Synchronized(@{}) })

@@ -416,6 +416,7 @@ td.num{font-family:var(--mono)}
   <h2>Setup</h2>
   <p class="sub">Halo Lab works on its own: open it with the desktop icon and everything else happens here. Nothing to install by hand.</p>
   <div class="card" id="setupBox"></div>
+  <div class="card" id="netBox"></div>
   <h3>How it works</h3>
   <ol>
     <li>The <b>Halo Lab</b> desktop icon starts a small background program (look for the orange ring near the clock). It opens this page, runs the CPU/GPU/NPU meters and manages the AI engine. Right-click the ring to quit.</li>
@@ -431,7 +432,7 @@ td.num{font-family:var(--mono)}
   <h3>Other engines (optional)</h3>
   <ol>
     <li><b>Ollama</b>: install from <span class="mono">ollama.com/download</span>, then pick Ollama at the top right. If the dot stays red, run <span class="mono">Fix Ollama connection.bat</span> once. Note: on Windows, Ollama may run this chip on the CPU only, which is much slower. Check the GPU meter while it answers.</li>
-    <li><b>LM Studio</b>: in the Developer tab, start the server and turn on <b>Enable CORS</b>. Download models in LM Studio's own Discover tab.</li>
+    <li><b>LM Studio</b>: in the Developer tab, start the server (Halo Lab passes its traffic through, so CORS can stay off). Download models in LM Studio's own Discover tab.</li>
     <li><b>FastFlowLM (runs models on the NPU)</b>: in Model Library → <b>Runs on the NPU</b>, press <b>Install FastFlowLM</b> once, then <b>Run on NPU</b> on a model. Halo Lab downloads it, starts it on the NPU and switches Chat to it; the NPU meter lights up while it answers. It needs AMD's NPU driver 32.0.203.311 or newer (check in Device Manager → Neural processors). To go back to the GPU, pick <b>Halo Lab engine</b> at the top right.</li>
     <li><b>AMD Lemonade Server</b>: AMD's app that can run models on the NPU (FastFlowLM inside) or in Hybrid mode (the NPU reads your prompt, the GPU writes the answer). Use its model manager, then pick AMD Lemonade at the top right.</li>
   </ol>
@@ -462,7 +463,7 @@ const f=(v,d=1)=>v==null||!isFinite(v)?'–':v.toFixed(d);
 let toastT;function toast(m){let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',4200)}
 
 /* ---------- settings ---------- */
-const HL=(location.protocol.startsWith('http')&&location.port==='11500')?'':'http://localhost:11500';
+const HL=location.protocol.startsWith('http')?'':'http://localhost:11500';
 const BACKENDS={
   halo:{label:'Halo Lab engine',type:'openai',url:(HL||location.origin)+'/v1'},
   ollama:{label:'Ollama',type:'ollama',url:'http://localhost:11434'},
@@ -861,6 +862,34 @@ function renderUrlRows(){$('#urlRows').innerHTML=Object.entries(BACKENDS).map(([
   $('#monUrlIn').onchange=e=>{S.monUrl=e.target.value.trim();saveS();pollHw()};
   $('#monReset').onclick=()=>{delete S.monUrl;saveS();renderUrlRows();pollHw()}}
 
+let NET=null,netBusy=false;
+async function netPoll(){try{NET=await hl('network')}catch(e){NET=null}renderNetBox()}
+function renderNetBox(){
+  const el=$('#netBox');if(!el||curTab!=='setup')return;
+  if(!NET){el.innerHTML=`<h3 style="margin-top:0">Network access</h3><div class="small muted">Open Halo Lab to change its port or share it with your home network.</div>`;el.dataset.h='';return}
+  const links=(NET.addresses||[]).map(a=>`http://${a}:${NET.port}/`);
+  const state=NET.lanActive?`<span style="color:var(--ok)">● On.</span> Phones, tablets and Raspberry Pis on your home network can open:<div style="margin-top:6px">${links.map(u=>`<div><a class="mono" href="${u}" target="_blank" style="color:var(--acc2)">${u}</a></div>`).join('')||'<span class="muted">(no network address found)</span>'}</div>`
+    :NET.lanWanted?`<span style="color:var(--bad)">● Turned on but not working yet.</span> Press Save again and click Yes when Windows asks.`
+    :`<span class="muted">● Off.</span> Only this PC can open Halo Lab.`;
+  const html=`<h3 style="margin-top:0">Network access</h3>
+    <div class="small">${state}</div>
+    <div class="row" style="margin-top:10px;align-items:center;gap:14px;flex-wrap:wrap">
+      <label style="margin:0">Port <input id="netPort" type="number" min="1024" max="65535" value="${NET.port}" style="width:100px;margin-left:6px"></label>
+      <label style="margin:0;display:flex;align-items:center;gap:6px"><input id="netLan" type="checkbox" ${NET.lanWanted?'checked':''}> Let other devices on my home network open Halo Lab</label>
+      <button id="netSave" ${NET.isLocal===false?'disabled':''}>Save and restart</button></div>
+    <div class="small muted" style="margin-top:6px">${NET.isLocal===false?'These settings can only be changed on the Halo Lab PC itself.':'Windows asks for permission once when you turn sharing on or change the port. Only devices on your home network are let in (not the internet). From other devices you can chat and watch the meters; closing apps, deleting models and these settings stay on this PC.'}</div>`;
+  if(el.dataset.h===html)return;
+  if(el.contains(document.activeElement)&&document.activeElement.id==='netPort')return;
+  el.dataset.h=html;el.innerHTML=html;
+  const b=$('#netSave');if(b)b.onclick=async()=>{
+    const port=parseInt($('#netPort').value,10),lan=$('#netLan').checked;
+    if(!(port>=1024&&port<=65535))return toast('Pick a port between 1024 and 65535');
+    b.disabled=true;b.textContent=lan||NET.lanWanted?'Waiting for Windows permission…':'Restarting…';
+    try{const r=await hl('network',{port,lan});toast('Restarting Halo Lab on port '+r.port+'…');
+      const next=location.protocol.startsWith('http')?`${location.protocol}//${location.hostname}:${r.port}/`:null;
+      setTimeout(()=>{if(next)location.href=next;else netPoll()},9000)}
+    catch(x){toast(x.message);b.disabled=false;b.textContent='Save and restart'}};
+}
 function renderSetupBox(){
   const el=$('#setupBox');if(!el||curTab!=='setup')return;
   if(!isHalo()){el.innerHTML=`<b>Using ${esc(B().label)}</b><div class="small muted">Switch to <b>Halo Lab engine</b> at the top right to use the built-in engine.</div>`;return}
@@ -1104,7 +1133,7 @@ $('#benchRun').onclick=async()=>{
 
 /* ---------- hardware monitor (served by halo-server.ps1) ---------- */
 const HW={on:false,data:null,hist:{cpu:[],gpu:[],npu:[]},peak:null,busy:false,timer:null};
-const monUrl=()=>(S.monUrl||'http://localhost:11500').replace(/\/+$/,'');
+const monUrl=()=>(S.monUrl||HL||location.origin).replace(/\/+$/,'');
 async function pollHw(){
   if(HW.busy)return;HW.busy=true;
   try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),6000);
@@ -1190,7 +1219,7 @@ function renderApps(list){
     if(!confirm(`Close ${b.dataset.name}? Anything it's doing will stop.`))return;
     try{const r=await hl('closeapp',{pid:+b.dataset.close});toast(r.name+' closed');setTimeout(refreshApps,1500)}catch(e){toast(e.message)}});
 }
-async function refreshApps(){if(!isHalo()&&!HL&&location.port!=='11500')return;try{const r=await fetch(HL+'/api/hl/memory').then(r=>r.json());renderApps(r.gpuProcs||[])}catch(e){renderApps(null)}}
+async function refreshApps(){if(!isHalo()&&HL&&location.protocol.startsWith('http'))return;try{const r=await fetch(HL+'/api/hl/memory').then(r=>r.json());renderApps(r.gpuProcs||[])}catch(e){renderApps(null)}}
 async function clearMemory(){
   const model=HLS?.server?.model;
   if(model&&(HLS.server.state==='ready'||HLS.server.state==='loading')&&!confirm(`Clear memory? This unloads ${model} (it loads again next time you chat) and asks other programs to give back RAM they aren't using.`))return;
@@ -1207,7 +1236,7 @@ $('#clearMem').onclick=clearMemory;$('#clearMem2').onclick=clearMemory;
 let curTab='chat';
 function showTab(t){curTab=t;$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));$$('main section').forEach(s=>s.classList.toggle('on',s.id===t));
   clearInterval(psTimer);if(t==='running'){refreshPs();psTimer=setInterval(refreshPs,3000)}
-  if(t==='setup'){renderUrlRows();renderSetupBox()}if(t==='library')pollNpuSoon();if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware'){renderHw();refreshApps()}}
+  if(t==='setup'){renderUrlRows();renderSetupBox();netPoll()}if(t==='library')pollNpuSoon();if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware'){renderHw();refreshApps()}}
 $('#tabs').onclick=e=>{const t=e.target.dataset.tab;if(t)showTab(t)};
 
 /* ---------- start ---------- */
