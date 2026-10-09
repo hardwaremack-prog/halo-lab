@@ -867,9 +867,9 @@ async function netPoll(){try{NET=await hl('network')}catch(e){NET=null}renderNet
 function renderNetBox(){
   const el=$('#netBox');if(!el||curTab!=='setup')return;
   if(!NET){el.innerHTML=`<h3 style="margin-top:0">Network access</h3><div class="small muted">Open Halo Lab to change its port or share it with your home network.</div>`;el.dataset.h='';return}
-  const links=(NET.addresses||[]).map(a=>`http://${a}:${NET.port}/`);
+  const links=(NET.addresses||[]).map(a=>`http://${a}:${NET.linkPort||NET.port}/`);
   const state=NET.lanActive?`<span style="color:var(--ok)">● On.</span> Phones, tablets and Raspberry Pis on your home network can open:<div style="margin-top:6px">${links.map(u=>`<div><a class="mono" href="${u}" target="_blank" style="color:var(--acc2)">${u}</a></div>`).join('')||'<span class="muted">(no network address found)</span>'}</div>`
-    :NET.lanWanted?`<span style="color:var(--bad)">● Turned on but not working yet.</span> Press Save again and click Yes when Windows asks.`
+    :NET.lanWanted?`<span style="color:var(--bad)">● Turned on but not working yet.</span> ${esc(NET.lanError||'Press Save again.')}`
     :`<span class="muted">● Off.</span> Only this PC can open Halo Lab.`;
   const html=`<h3 style="margin-top:0">Network access</h3>
     <div class="small">${state}</div>
@@ -877,14 +877,14 @@ function renderNetBox(){
       <label style="margin:0">Port <input id="netPort" type="number" min="1024" max="65535" value="${NET.port}" style="width:100px;margin-left:6px"></label>
       <label style="margin:0;display:flex;align-items:center;gap:6px"><input id="netLan" type="checkbox" ${NET.lanWanted?'checked':''}> Let other devices on my home network open Halo Lab</label>
       <button id="netSave" ${NET.isLocal===false?'disabled':''}>Save and restart</button></div>
-    <div class="small muted" style="margin-top:6px">${NET.isLocal===false?'These settings can only be changed on the Halo Lab PC itself.':'Windows asks for permission once when you turn sharing on or change the port. Only devices on your home network are let in (not the internet). From other devices you can chat and watch the meters; closing apps, deleting models and these settings stay on this PC.'}</div>`;
+    <div class="small muted" style="margin-top:6px">${NET.isLocal===false?'These settings can only be changed on the Halo Lab PC itself.':(NET.nodeFound?'Sharing uses a small Node.js relay on port '+((NET.port||11500)+1)+', so no Windows permission is needed. ':'Windows asks for permission once when you turn sharing on. ')+'Halo Lab has no login, so anyone on your Wi-Fi can open it. From other devices you can chat and watch the meters; closing apps, deleting models and these settings stay on this PC.'}</div>`;
   if(el.dataset.h===html)return;
   if(el.contains(document.activeElement)&&document.activeElement.id==='netPort')return;
   el.dataset.h=html;el.innerHTML=html;
   const b=$('#netSave');if(b)b.onclick=async()=>{
     const port=parseInt($('#netPort').value,10),lan=$('#netLan').checked;
     if(!(port>=1024&&port<=65535))return toast('Pick a port between 1024 and 65535');
-    b.disabled=true;b.textContent=lan||NET.lanWanted?'Waiting for Windows permission…':'Restarting…';
+    b.disabled=true;b.textContent=(lan&&!NET.nodeFound)?'Waiting for Windows permission…':'Restarting…';
     try{const r=await hl('network',{port,lan});toast('Restarting Halo Lab on port '+r.port+'…');
       const next=location.protocol.startsWith('http')?`${location.protocol}//${location.hostname}:${r.port}/`:null;
       setTimeout(()=>{if(next)location.href=next;else netPoll()},9000)}

@@ -71,12 +71,48 @@ function Get-LanAddresses {
   return $out
 }
 
+function Find-Node {
+  $c = Get-Command node.exe -ErrorAction SilentlyContinue
+  if ($c) { return $c.Source }
+  if (-not $env:ProgramFiles) { return $null }
+  foreach ($p in @((Join-Path $env:ProgramFiles 'nodejs\node.exe'), (Join-Path $env:LOCALAPPDATA 'Programs\nodejs\node.exe'))) { if (Test-Path $p) { return $p } }
+  return $null
+}
+
+# Home-network relay: Node.js is already allowed through Windows Firewall, so a small Node program
+# can share Halo Lab with other devices without admin rights. It listens on (port + 1).
+function Stop-Relay($sync) {
+  try {
+    Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object { $_.CommandLine -like '*halo-relay.js*' } |
+      ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+  } catch {}
+  $sync.relayPort = $null
+}
+function Start-Relay($sync) {
+  Stop-Relay $sync
+  $node = Find-Node
+  $js = Join-Path $sync.root 'halo-relay.js'
+  if (-not $node -or -not (Test-Path $js)) { $sync.lanError = 'Node.js is not installed, so sharing needs the one-time Windows permission instead.'; return $false }
+  $rp = [int]$sync.port + 1
+  try {
+    Start-Process -FilePath $node -ArgumentList @(('"' + $js + '"'), $rp, $sync.port) -WindowStyle Hidden | Out-Null
+    for ($i = 0; $i -lt 20; $i++) {
+      Start-Sleep -Milliseconds 250
+      $c = New-Object Net.Sockets.TcpClient
+      try { $c.Connect('127.0.0.1', $rp); $sync.relayPort = $rp; return $true } catch {} finally { $c.Close() }
+    }
+  } catch { $sync.lanError = $_.Exception.Message }
+  if (-not $sync.lanError) { $sync.lanError = "The relay could not start on port $rp (is another program using it?)." }
+  return $false
+}
+
 function Get-NetworkInfo($sync) {
   $port = [int]$sync.port
   $acl = $false; $fw = $false
   try { $acl = [bool]((& netsh.exe http show urlacl url=("http://+:$port/") 2>$null | Out-String) -match [regex]::Escape("http://+:$port/")) } catch {}
   try { & netsh.exe advfirewall firewall show rule name='Halo Lab' 2>$null | Out-Null; $fw = ($LASTEXITCODE -eq 0) } catch {}
-  return [ordered]@{ port = $port; lanWanted = [bool]$sync.lan; lanActive = [bool]$sync.lanActive; lanError = $sync.lanError; aclReady = $acl; firewallRule = $fw; addresses = @(Get-LanAddresses) }
+  $linkPort = $port; if ($sync.relayPort) { $linkPort = [int]$sync.relayPort }
+  return [ordered]@{ port = $port; linkPort = $linkPort; relayPort = $sync.relayPort; lanWanted = [bool]$sync.lan; lanActive = ([bool]$sync.lanActive -or [bool]$sync.relayPort); lanError = $sync.lanError; aclReady = $acl; firewallRule = $fw; nodeFound = [bool](Find-Node); addresses = @(Get-LanAddresses) }
 }
 
 function Get-ModelsDir($sync) {
@@ -799,6 +835,7 @@ $ServerCode = {
     $listener.Prefixes.Add($sync.url)
     try { $listener.Start() } catch { $sync.error = "Could not start on port $($sync.port): $($_.Exception.Message)"; return }
   }
+  if ($sync.lan -and -not $sync.lanActive -and $sync.isWin) { $sync.lanError = $null; [void](Start-Relay $sync) }
   $sync.ready = $true
 
   while ($listener.IsListening -and -not $sync.stop) {
@@ -814,7 +851,8 @@ $ServerCode = {
     try {
       if ($method -eq 'OPTIONS') { $res.StatusCode = 204; $res.Close(); continue }
       # other devices on the home network can chat and watch the meters, but not change this PC
-      if (-not $req.IsLocal -and $path -match '^/api/hl/(closeapp|quit|delete|config|network|engine/install|flm/install|clear)$' -and $method -eq 'POST') {
+      $isLocal = $req.IsLocal -and -not $req.Headers['X-Halo-Remote']
+      if (-not $isLocal -and $path -match '^/api/hl/(closeapp|quit|delete|config|network|engine/install|flm/install|clear)$' -and $method -eq 'POST') {
         Send-Json $res @{ error = 'That only works on the Halo Lab PC itself.' } 403; continue }
       switch -Regex ($path) {
         '^/$|^/index\.html$' {
@@ -980,7 +1018,7 @@ $ServerCode = {
           Save-HLConfig $sync @{ modelsDir = $dir }
           Send-Json $res @{ ok = $true }; break }
         '^/api/hl/network$' {
-          if ($method -ne 'POST') { $ni = Get-NetworkInfo $sync; $ni.isLocal = [bool]$req.IsLocal; Send-Json $res $ni; break }
+          if ($method -ne 'POST') { $ni = Get-NetworkInfo $sync; $ni.isLocal = [bool]$isLocal; Send-Json $res $ni; break }
           $b = Read-Body $req
           $np = [int]$b.port; $lan = [bool]$b.lan
           if ($np -lt 1024 -or $np -gt 65535) { Send-Json $res @{ error = 'Pick a port between 1024 and 65535.' } 400; break }
@@ -993,7 +1031,8 @@ $ServerCode = {
           $who = [Security.Principal.WindowsIdentity]::GetCurrent().Name
           $cmd = "netsh http delete urlacl url=http://+:$($sync.port)/ | Out-Null; netsh advfirewall firewall delete rule name='Halo Lab' | Out-Null; "
           if ($lan) { $cmd += "netsh http add urlacl url=http://+:$np/ user='$who' | Out-Null; netsh advfirewall firewall add rule name='Halo Lab' dir=in action=allow protocol=TCP localport=$np remoteip=localsubnet | Out-Null" }
-          $needAdmin = $lan -or [bool]$sync.lan
+          # with Node.js installed the relay shares Halo Lab without admin rights; otherwise reserve the address once
+          $needAdmin = $lan -and -not (Find-Node)
           if ($needAdmin) {
             try { $p = Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -Wait -PassThru -ArgumentList @('-NoProfile', '-Command', $cmd) }
             catch { Send-Json $res @{ error = 'Windows permission was not given, so nothing changed.' } 400; break }
@@ -1018,13 +1057,14 @@ $ServerCode = {
     }
   }
   Stop-Model
+  try { Stop-Relay $sync } catch {}
   try { $listener.Stop(); $listener.Close() } catch {}
   $sync.stopped = $true
 }
 
 # ---------- start ----------
 $sync = [hashtable]::Synchronized(@{
-  root = $Root; data = $Data; port = $Port; url = $Url; isWin = $IsWin; lan = $Lan; lanActive = $false; lanError = $null
+  root = $Root; data = $Data; port = $Port; url = $Url; isWin = $IsWin; lan = $Lan; lanActive = $false; lanError = $null; relayPort = $null
   lib = $Lib; engineCode = $EngineJob.ToString(); pullCode = $PullJob.ToString(); proxyCode = $ProxyJob.ToString()
   flmInstallCode = $FlmInstallJob.ToString(); flmRunCode = $FlmRunJob.ToString()
   flm = [hashtable]::Synchronized(@{ status = $null; done = 0L; total = 0L; baseDone = 0L; fileDone = 0L; cancel = $false; error = $null; validate = $null; state = 'stopped'; tag = $null; servePid = $null; pulls = [hashtable]::Synchronized(@{}) })
