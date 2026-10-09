@@ -54,6 +54,70 @@ function Get-ModelsDir($sync) {
 
 function Get-SafeName([string]$id) { return ($id -replace '[^A-Za-z0-9._-]', '_') }
 
+# FastFlowLM (runs models on the Ryzen AI NPU): find flm.exe even if this process started before it was installed
+function Find-Flm {
+  $c = Get-Command flm.exe -ErrorAction SilentlyContinue
+  if ($c) { return $c.Source }
+  $dirs = @()
+  foreach ($scope in @('Machine', 'User')) { $pth = [Environment]::GetEnvironmentVariable('Path', $scope); if ($pth) { $dirs += ($pth -split ';') } }
+  if ($env:ProgramFiles) { $dirs += @((Join-Path $env:ProgramFiles 'flm'), (Join-Path $env:ProgramFiles 'FastFlowLM')) }
+  if ($env:LOCALAPPDATA) { $dirs += (Join-Path $env:LOCALAPPDATA 'Programs\flm') }
+  foreach ($d in $dirs) { if ($d -and $d.Trim()) { $f = Join-Path $d.Trim() 'flm.exe'; if (Test-Path $f) { return $f } } }
+  return $null
+}
+
+# read a log file another program is still writing to
+function Read-Shared([string]$path) {
+  if (-not (Test-Path $path)) { return '' }
+  try {
+    $fs = New-Object IO.FileStream($path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+    $sr = New-Object IO.StreamReader($fs); $t = $sr.ReadToEnd(); $sr.Close(); return $t
+  } catch { return '' }
+}
+
+# start a console program with no window, sending its output to a log file; returns the process (cmd.exe)
+function Start-Hidden([string]$exe, [string]$cmdArgs, [string]$log) {
+  if (Test-Path $log) { Remove-Item $log -Force -ErrorAction SilentlyContinue }
+  $psi = New-Object Diagnostics.ProcessStartInfo
+  $psi.FileName = 'cmd.exe'
+  $psi.Arguments = '/c ""' + $exe + '" ' + $cmdArgs + ' > "' + $log + '" 2>&1"'
+  $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+  $psi.WorkingDirectory = (Split-Path $exe)
+  return [Diagnostics.Process]::Start($psi)
+}
+
+# FastFlowLM keeps models in FLM_MODEL_PATH. Its installer can point that at a folder this Windows account
+# can't write to (for example another account's OneDrive); if so, use FastFlowLM's standard per-user folder.
+function Set-FlmModelPath {
+  $cur = [Environment]::GetEnvironmentVariable('FLM_MODEL_PATH', 'Process')
+  if (-not $cur) { $cur = [Environment]::GetEnvironmentVariable('FLM_MODEL_PATH', 'User') }
+  if (-not $cur) { $cur = [Environment]::GetEnvironmentVariable('FLM_MODEL_PATH', 'Machine') }
+  $ok = $false
+  if ($cur) {
+    try {
+      if (-not (Test-Path $cur)) { New-Item -ItemType Directory -Path $cur -Force -ErrorAction Stop | Out-Null }
+      $probe = Join-Path $cur ('.halolab-' + [guid]::NewGuid().ToString('N'))
+      Set-Content -Path $probe -Value 'x' -ErrorAction Stop; Remove-Item $probe -Force -ErrorAction SilentlyContinue
+      $ok = $true
+    } catch {}
+  }
+  if (-not $ok) {
+    $cur = Join-Path $env:USERPROFILE '.flm\models'
+    if (-not (Test-Path $cur)) { New-Item -ItemType Directory -Path $cur -Force | Out-Null }
+  }
+  [Environment]::SetEnvironmentVariable('FLM_MODEL_PATH', $cur, 'Process')
+  return $cur
+}
+
+function Stop-Tree([int]$procId) { if ($procId) { try { & taskkill.exe /T /F /PID $procId 2>&1 | Out-Null } catch {} } }
+
+function Stop-Flm($sync) {
+  $f = $sync.flm
+  if ($f.servePid) { Stop-Tree $f.servePid }
+  try { Get-Process -Name 'flm' -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $PID } | Stop-Process -Force -ErrorAction SilentlyContinue } catch {}
+  $f.servePid = $null; $f.state = 'stopped'; $f.tag = $null
+}
+
 # Downloads one file with resume support. $st holds progress: baseDone + this file = done.
 function Save-Url([string]$url, [string]$dest, $st) {
   $part = "$dest.part"
@@ -69,6 +133,7 @@ function Save-Url([string]$url, [string]$dest, $st) {
   try {
     $mode = [IO.FileMode]::Create
     if ($have -gt 0 -and [int]$resp.StatusCode -eq 206) { $mode = [IO.FileMode]::Append } else { $have = 0L }
+    if ($st.total -le 0 -and $resp.ContentLength -gt 0) { $st.total = $have + $resp.ContentLength }
     $fs = [IO.File]::Open($part, $mode, [IO.FileAccess]::Write)
     try {
       $in = $resp.GetResponseStream()
@@ -218,12 +283,93 @@ $PullJob = {
   }
 }
 
+# ---------- background job: install FastFlowLM ----------
+$FlmInstallJob = {
+  param($sync)
+  $ErrorActionPreference = 'Stop'
+  . ([scriptblock]::Create($sync.lib))
+  $st = $sync.flm
+  try {
+    $st.status = 'Downloading FastFlowLM'
+    $msi = Join-Path $sync.data 'flm-setup.msi'
+    Save-Url 'https://github.com/ROCm/FastFlowLM/releases/latest/download/flm-setup.msi' $msi $st
+    $st.status = 'Installing: click Yes if Windows asks for permission'
+    $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', ('"' + $msi + '"'), '/passive', '/norestart') -Wait -PassThru
+    if ($p.ExitCode -eq 1602 -or $p.ExitCode -eq 1223) { throw 'The installation was cancelled.' }
+    if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { throw "The FastFlowLM installer stopped with code $($p.ExitCode)." }
+    Remove-Item $msi -Force -ErrorAction SilentlyContinue
+    $exe = Find-Flm
+    if (-not $exe) { throw 'FastFlowLM installed, but flm.exe was not found. Quit and reopen Halo Lab.' }
+    $st.status = 'Checking the NPU'
+    $vlog = Join-Path (Join-Path $sync.data 'logs') 'flm-validate.log'
+    $vp = Start-Hidden $exe 'validate' $vlog
+    [void]$vp.WaitForExit(60000)
+    $st.validate = (Read-Shared $vlog).Trim()
+    $st.status = 'done'
+  } catch { $st.error = $_.Exception.Message; $st.status = 'failed' }
+}
+
+# ---------- background job: download an NPU model and start it with FastFlowLM ----------
+$FlmRunJob = {
+  param($sync, $tag)
+  $ErrorActionPreference = 'Stop'
+  . ([scriptblock]::Create($sync.lib))
+  $f = $sync.flm; $pl = $f.pulls[$tag]
+  try {
+    $exe = Find-Flm
+    if (-not $exe) { throw 'FastFlowLM is not installed yet.' }
+    $f.modelPath = Set-FlmModelPath
+    $logs = Join-Path $sync.data 'logs'
+    $pl.status = 'Downloading'; $pl.pct = $null
+    $plog = Join-Path $logs 'flm-pull.log'
+    $p = Start-Hidden $exe ('pull ' + $tag) $plog
+    while (-not $p.HasExited) {
+      Start-Sleep -Milliseconds 700
+      $t = Read-Shared $plog
+      $m = [regex]::Matches($t, '(\d{1,3}(?:\.\d+)?)\s*%')
+      if ($m.Count) { $pl.pct = [double]$m[$m.Count - 1].Groups[1].Value }
+      if ($pl.cancel) { Stop-Tree $p.Id; throw 'Cancelled' }
+    }
+    $t = Read-Shared $plog
+    if ($p.ExitCode -ne 0 -or $t -match '(?i)\berror\b|not found|unknown model|invalid model') {
+      $last = @(($t -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -Last 2) -join ' '
+      throw ("FastFlowLM couldn't download $tag (model folder: $($f.modelPath)). " + $last)
+    }
+    $pl.pct = 100
+    Stop-Flm $sync
+    $pl.status = 'Starting on the NPU'
+    $f.tag = $tag; $f.state = 'loading'
+    $slog = Join-Path $logs 'flm-serve.log'
+    $sp = Start-Hidden $exe ('serve ' + $tag + ' --port 52625') $slog
+    $f.servePid = $sp.Id
+    $ok = $false
+    for ($i = 0; $i -lt 240; $i++) {
+      Start-Sleep -Milliseconds 750
+      if ($sp.HasExited) { break }
+      try {
+        $r = [Net.HttpWebRequest]::Create('http://127.0.0.1:52625/v1/models'); $r.Timeout = 1500
+        $resp = $r.GetResponse(); $code = [int]$resp.StatusCode; $resp.Close()
+        if ($code -eq 200) { $ok = $true; break }
+      } catch {}
+    }
+    if (-not $ok) {
+      $last = @(((Read-Shared $slog) -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -Last 3) -join ' '
+      Stop-Flm $sync
+      throw ("FastFlowLM couldn't start $tag on the NPU. " + $last)
+    }
+    $f.state = 'ready'; $pl.status = 'done'
+  } catch {
+    $msg = $_.Exception.Message
+    if ($msg -eq 'Cancelled') { $pl.status = 'cancelled'; $pl.error = $null } else { $pl.error = $msg; $pl.status = 'failed' }
+  }
+}
+
 # ---------- background job: pass one request through to the engine (streams answers) ----------
 $ProxyJob = {
-  param($sync, $ctx)
+  param($sync, $ctx, $base, $strip)
   $req = $ctx.Request; $res = $ctx.Response; $up = $null
   try {
-    $up = [Net.HttpWebRequest]::Create('http://127.0.0.1:11600' + $req.Url.PathAndQuery)
+    $up = [Net.HttpWebRequest]::Create($base + $req.Url.PathAndQuery.Substring($strip))
     $up.Method = $req.HttpMethod
     $up.Timeout = 900000
     $up.ReadWriteTimeout = 900000
@@ -251,7 +397,9 @@ $ProxyJob = {
     try {
       $res.StatusCode = 502
       $res.ContentType = 'application/json'
-      $b = [Text.Encoding]::UTF8.GetBytes('{"error":{"message":"The AI engine is not running. Pick a model in Chat to load it."}}')
+      $msg = 'The AI engine is not running. Pick a model in Chat to load it.'
+      if ($base -like '*52625*') { $msg = 'FastFlowLM is not running. In Model Library, press Run on NPU on a model.' }
+      $b = [Text.Encoding]::UTF8.GetBytes('{"error":{"message":"' + $msg + '"}}')
       $res.OutputStream.Write($b, 0, $b.Length)
     } catch {}
   }
@@ -463,6 +611,12 @@ $ServerCode = {
     foreach ($m in (Get-Models)) { $models += [ordered]@{ id = $m.id; name = $m.name; repo = $m.repo; quant = $m.quant; bytes = $m.bytes; vision = $m.vision } }
     $dls = [ordered]@{}
     foreach ($k in @($sync.dl.Keys)) { $d = $sync.dl[$k]; $dls[$k] = [ordered]@{ status = $d.status; done = $d.done; total = $d.total; error = $d.error; name = $d.name; repo = $d.repo; quant = $d.quant; vision = $d.vision } }
+    $f = $sync.flm
+    $flmExe = $null; try { $flmExe = Find-Flm } catch {}
+    if ($f.state -eq 'ready' -and $f.servePid) { try { $sp = Get-Process -Id $f.servePid -ErrorAction Stop; if ($sp.HasExited) { $f.state = 'stopped' } } catch { $f.state = 'stopped'; $f.servePid = $null } }
+    $fp = [ordered]@{}
+    foreach ($k in @($f.pulls.Keys)) { $d = $f.pulls[$k]; $fp[$k] = [ordered]@{ status = $d.status; pct = $d.pct; error = $d.error } }
+    $flm = [ordered]@{ installed = [bool]$flmExe; installing = ($f.status -and $f.status -ne 'done' -and $f.status -ne 'failed'); status = $f.status; done = $f.done; total = $f.total; error = $f.error; validate = $f.validate; state = $f.state; tag = $f.tag; pulls = $fp }
     $mdir = Get-ModelsDir $sync
     $free = $null
     try { $free = [math]::Round((New-Object IO.DriveInfo([IO.Path]::GetPathRoot($mdir))).AvailableFreeSpace / 1GB, 1) } catch {}
@@ -471,7 +625,7 @@ $ServerCode = {
       ok = $true; app = 'halo-lab'; version = '2.0'
       engine = $engine
       server = [ordered]@{ state = $s.state; model = $s.model; ctx = $s.ctx; port = $EnginePort; error = $s.error; detail = $s.detail; device = $s.device; since = $s.since; progress = $s.progress; readGB = [math]::Round([double]$s.readBytes / 1GB, 1); totalGB = [math]::Round([double]$s.totalBytes / 1GB, 1); warn = $s.warn }
-      models = $models; downloads = $dls
+      models = $models; downloads = $dls; flm = $flm
       disk = [ordered]@{ modelsDir = $mdir; freeGB = $free }
     }
   }
@@ -609,7 +763,10 @@ $ServerCode = {
           try { Send-Json $res (Get-Stats) } catch { Send-Json $res ([ordered]@{ ok = $false; error = $_.Exception.Message }) }; break }
         '^/v1/' {
           # chat goes through here so the page only ever talks to Halo Lab itself
-          Start-Bg $sync.proxyCode @($sync, $ctx); break }
+          Start-Bg $sync.proxyCode @($sync, $ctx, 'http://127.0.0.1:11600', 0); break }
+        '^/flm/v1/' {
+          # FastFlowLM (NPU) traffic also goes through Halo Lab
+          Start-Bg $sync.proxyCode @($sync, $ctx, 'http://127.0.0.1:52625', 4); break }
         '^/api/hl/gpudebug$' {
           $rows = @()
           $ad = @{}
@@ -701,6 +858,25 @@ $ServerCode = {
           try { Start-Model ([string]$b.id) $ctxN $fitMiB ([bool]$warn); $sync.srv.warn = $warn; $sync.srv.fitMiB = $fitMiB; Send-Json $res @{ ok = $true; warn = $warn } }
           catch { Send-Json $res @{ error = $_.Exception.Message } 400 }
           break }
+        '^/api/hl/flm/install$' {
+          $f = $sync.flm
+          if (-not ($f.status -and $f.status -ne 'done' -and $f.status -ne 'failed')) {
+            $f.status = 'Starting'; $f.error = $null; $f.done = 0L; $f.total = 0L; $f.baseDone = 0L; $f.fileDone = 0L; $f.cancel = $false
+            Start-Bg $sync.flmInstallCode @($sync)
+          }
+          Send-Json $res @{ ok = $true }; break }
+        '^/api/hl/flm/run$' {
+          $b = Read-Body $req; $tag = [string]$b.tag
+          if ($tag -notmatch '^[A-Za-z0-9._:-]+$') { Send-Json $res @{ error = 'Bad model name.' } 400; break }
+          if (-not (Find-Flm)) { Send-Json $res @{ error = 'Install FastFlowLM first (Model Library, Runs on the NPU).' } 400; break }
+          $cur = $sync.flm.pulls[$tag]
+          if ($cur -and $cur.status -ne 'done' -and $cur.status -ne 'failed' -and $cur.status -ne 'cancelled') { Send-Json $res @{ ok = $true }; break }
+          Stop-Model
+          $sync.flm.pulls[$tag] = [hashtable]::Synchronized(@{ status = 'Starting'; pct = $null; error = $null; cancel = $false })
+          Start-Bg $sync.flmRunCode @($sync, $tag)
+          Send-Json $res @{ ok = $true }; break }
+        '^/api/hl/flm/cancel$' { $b = Read-Body $req; $d = $sync.flm.pulls[[string]$b.tag]; if ($d) { $d.cancel = $true }; Send-Json $res @{ ok = $true }; break }
+        '^/api/hl/flm/stop$' { Stop-Flm $sync; Send-Json $res @{ ok = $true }; break }
         '^/api/hl/memory$' {
           $os = Get-CimInstance Win32_OperatingSystem
           $tot = [double]$os.TotalVisibleMemorySize * 1KB / 1GB; $fr = [double]$os.FreePhysicalMemory * 1KB / 1GB
@@ -739,6 +915,7 @@ $ServerCode = {
           Send-Json $res @{ ok = $true }; break }
         '^/api/hl/quit$' {
           Stop-Model
+          try { Stop-Flm $sync } catch {}
           Send-Json $res @{ ok = $true }
           $sync.stop = $true; break }
         default { Send-Json $res @{ error = 'not found' } 404 }
@@ -756,6 +933,8 @@ $ServerCode = {
 $sync = [hashtable]::Synchronized(@{
   root = $Root; data = $Data; port = $Port; url = $Url; isWin = $IsWin
   lib = $Lib; engineCode = $EngineJob.ToString(); pullCode = $PullJob.ToString(); proxyCode = $ProxyJob.ToString()
+  flmInstallCode = $FlmInstallJob.ToString(); flmRunCode = $FlmRunJob.ToString()
+  flm = [hashtable]::Synchronized(@{ status = $null; done = 0L; total = 0L; baseDone = 0L; fileDone = 0L; cancel = $false; error = $null; validate = $null; state = 'stopped'; tag = $null; servePid = $null; pulls = [hashtable]::Synchronized(@{}) })
   jobs = [Collections.ArrayList]::Synchronized((New-Object Collections.ArrayList))
   dl = [hashtable]::Synchronized(@{})
   engineJob = [hashtable]::Synchronized(@{ status = $null; done = 0L; total = 0L; baseDone = 0L; cancel = $false; error = $null })

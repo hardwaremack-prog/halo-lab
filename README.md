@@ -79,6 +79,10 @@ can use the loaded model through its OpenAI-compatible API.
 
 ## About the NPU
 
+Model Library → **Runs on the NPU** has one-click buttons: **Install FastFlowLM** (AMD's free NPU runtime, one time)
+and **Run on NPU** on each model, which downloads it, starts it on the NPU and switches Chat to it. On an EVO-X2,
+Qwen3 1.7B ran at 41.6 tok/s on the NPU.
+
 The NPU reading 0% while you chat is normal. Ollama, LM Studio and llama.cpp run models on
 the GPU, which is much faster than the NPU for large models. To use the NPU, run AMD Lemonade
 Server with a model marked NPU or Hybrid and pick Lemonade at the top right. NPU activity
