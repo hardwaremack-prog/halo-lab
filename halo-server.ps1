@@ -56,14 +56,22 @@ function Get-SafeName([string]$id) { return ($id -replace '[^A-Za-z0-9._-]', '_'
 
 # FastFlowLM (runs models on the Ryzen AI NPU): find flm.exe even if this process started before it was installed
 function Find-Flm {
+  $found = @()
   $c = Get-Command flm.exe -ErrorAction SilentlyContinue
-  if ($c) { return $c.Source }
+  if ($c) { $found += $c.Source }
   $dirs = @()
   foreach ($scope in @('Machine', 'User')) { $pth = [Environment]::GetEnvironmentVariable('Path', $scope); if ($pth) { $dirs += ($pth -split ';') } }
   if ($env:ProgramFiles) { $dirs += @((Join-Path $env:ProgramFiles 'flm'), (Join-Path $env:ProgramFiles 'FastFlowLM')) }
   if ($env:LOCALAPPDATA) { $dirs += (Join-Path $env:LOCALAPPDATA 'Programs\flm') }
-  foreach ($d in $dirs) { if ($d -and $d.Trim()) { $f = Join-Path $d.Trim() 'flm.exe'; if (Test-Path $f) { return $f } } }
-  return $null
+  foreach ($d in $dirs) { if ($d -and $d.Trim()) { $f = Join-Path $d.Trim() 'flm.exe'; if (Test-Path $f) { $found += $f } } }
+  if (-not $found.Count) { return $null }
+  # after an update there can be an old and a new copy; use the newest
+  return (@($found | Select-Object -Unique | ForEach-Object { Get-Item $_ } | Sort-Object LastWriteTime -Descending)[0]).FullName
+}
+
+# FastFlowLM prints "New version detected! (current v0.9.36, latest v1.0.7)" when it's out of date
+function Read-FlmVersion($sync, [string]$text) {
+  if ($text -match 'current v?([\d.]+), latest v?([\d.]+)') { $sync.flm.current = $Matches[1]; $sync.flm.latest = $Matches[2]; $sync.flm.outdated = $true }
 }
 
 # read a log file another program is still writing to
@@ -290,6 +298,7 @@ $FlmInstallJob = {
   . ([scriptblock]::Create($sync.lib))
   $st = $sync.flm
   try {
+    Stop-Flm $sync
     $st.status = 'Downloading FastFlowLM'
     $msi = Join-Path $sync.data 'flm-setup.msi'
     Save-Url 'https://github.com/ROCm/FastFlowLM/releases/latest/download/flm-setup.msi' $msi $st
@@ -305,6 +314,7 @@ $FlmInstallJob = {
     $vp = Start-Hidden $exe 'validate' $vlog
     [void]$vp.WaitForExit(60000)
     $st.validate = (Read-Shared $vlog).Trim()
+    $st.outdated = $false; Read-FlmVersion $sync $st.validate
     $st.status = 'done'
   } catch { $st.error = $_.Exception.Message; $st.status = 'failed' }
 }
@@ -331,6 +341,7 @@ $FlmRunJob = {
       if ($pl.cancel) { Stop-Tree $p.Id; throw 'Cancelled' }
     }
     $t = Read-Shared $plog
+    Read-FlmVersion $sync $t
     if ($p.ExitCode -ne 0 -or $t -match '(?i)\berror\b|not found|unknown model|invalid model') {
       $last = @(($t -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -Last 2) -join ' '
       throw ("FastFlowLM couldn't download $tag (model folder: $($f.modelPath)). " + $last)
@@ -353,9 +364,12 @@ $FlmRunJob = {
       } catch {}
     }
     if (-not $ok) {
-      $last = @(((Read-Shared $slog) -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -Last 3) -join ' '
+      $st = Read-Shared $slog
+      Read-FlmVersion $sync $st
       Stop-Flm $sync
-      throw ("FastFlowLM couldn't start $tag on the NPU. " + $last)
+      if ($f.outdated) { throw ("FastFlowLM is out of date (v$($f.current); newest is v$($f.latest)) and couldn't run $tag. Press Update FastFlowLM above, then try again.") }
+      $last = @(($st -split "`r?`n") | Where-Object { $_.Trim() -and $_ -notmatch 'Download link|Using user-specified port|Power Mode' } | Select-Object -Last 2) -join ' '
+      throw ("FastFlowLM couldn't start $tag on the NPU. It stopped after: " + $last)
     }
     $f.state = 'ready'; $pl.status = 'done'
   } catch {
@@ -613,10 +627,15 @@ $ServerCode = {
     foreach ($k in @($sync.dl.Keys)) { $d = $sync.dl[$k]; $dls[$k] = [ordered]@{ status = $d.status; done = $d.done; total = $d.total; error = $d.error; name = $d.name; repo = $d.repo; quant = $d.quant; vision = $d.vision } }
     $f = $sync.flm
     $flmExe = $null; try { $flmExe = Find-Flm } catch {}
+    if (-not $f.versionChecked) {
+      $f.versionChecked = $true
+      $vl = Join-Path $sync.data 'logs'
+      foreach ($n in @('flm-serve.log', 'flm-validate.log')) { try { Read-FlmVersion $sync (Read-Shared (Join-Path $vl $n)) } catch {} }
+    }
     if ($f.state -eq 'ready' -and $f.servePid) { try { $sp = Get-Process -Id $f.servePid -ErrorAction Stop; if ($sp.HasExited) { $f.state = 'stopped' } } catch { $f.state = 'stopped'; $f.servePid = $null } }
     $fp = [ordered]@{}
     foreach ($k in @($f.pulls.Keys)) { $d = $f.pulls[$k]; $fp[$k] = [ordered]@{ status = $d.status; pct = $d.pct; error = $d.error } }
-    $flm = [ordered]@{ installed = [bool]$flmExe; installing = ($f.status -and $f.status -ne 'done' -and $f.status -ne 'failed'); status = $f.status; done = $f.done; total = $f.total; error = $f.error; validate = $f.validate; state = $f.state; tag = $f.tag; pulls = $fp }
+    $flm = [ordered]@{ outdated = [bool]$f.outdated; current = $f.current; latest = $f.latest; installed = [bool]$flmExe; installing = ($f.status -and $f.status -ne 'done' -and $f.status -ne 'failed'); status = $f.status; done = $f.done; total = $f.total; error = $f.error; validate = $f.validate; state = $f.state; tag = $f.tag; pulls = $fp }
     $mdir = Get-ModelsDir $sync
     $free = $null
     try { $free = [math]::Round((New-Object IO.DriveInfo([IO.Path]::GetPathRoot($mdir))).AvailableFreeSpace / 1GB, 1) } catch {}
