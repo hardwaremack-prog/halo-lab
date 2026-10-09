@@ -116,6 +116,12 @@ textarea.sys{width:100%;min-height:110px;resize:vertical;font-size:13px}
 .tag{font-family:var(--mono);font-size:12px;color:var(--mute)}
 .badges{display:flex;gap:5px;flex-wrap:wrap}
 .badge{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.picks-card{margin-bottom:12px}.picks-card summary{cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stamp{font-size:11px;font-family:var(--mono);color:var(--warn);border:1px solid #5a4520;border-radius:999px;padding:1px 8px}
+.picks-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+.picks-grid h4{margin:0 0 6px;display:flex;gap:8px;align-items:center}
+table.ptable td{vertical-align:top}table.ptable tr.skip td{color:var(--dim)}
+@media (max-width:700px){.picks-grid{grid-template-columns:1fr}}
 .badge.npu{color:#c9a7ff;border-color:#4b2f7a;background:#241a38}.badge.gpu{color:var(--acc2);border-color:#5a3420}
 .badge.ok{color:var(--ok);border-color:#1f5a3a}.badge.warn{color:var(--warn);border-color:#5a4520}.badge.bad{color:var(--bad);border-color:#5a2525}.badge.inst{color:var(--blue);border-color:#22456b}
 .meter{height:7px;border-radius:9px;background:var(--panel3);overflow:hidden;position:relative}
@@ -291,10 +297,39 @@ td.num{font-family:var(--mono)}
 <section id="library"><div class="pad">
   <h2>Model Library</h2>
   <p class="sub">Picked for a 96 GB Strix Halo machine. Fit and speed update with your GPU budget and context size. Speeds are rough estimates; use Benchmark for real numbers.</p>
+  <details class="card picks-card" open id="picksCard">
+    <summary><b>Suggested models for this PC</b> <span class="stamp">Updated Oct 8, 2026</span></summary>
+    <p class="small muted" style="margin:6px 0 10px">AI models move fast, so treat these as a snapshot from the date above. New models may have come out since; you can download any of them by name below.</p>
+    <div class="picks-grid">
+      <div>
+        <h4><span class="badge gpu">GPU</span> Built-in engine (Radeon 8060S)</h4>
+        <table class="ptable"><thead><tr><th>Model</th><th>Download</th><th>Why</th></tr></thead><tbody>
+          <tr><td><b>Qwen3 30B-A3B</b><div class="small muted">Start here</div></td><td class="num">18.6 GB</td><td>Smart and very fast on this chip (est. 60+ tok/s).</td></tr>
+          <tr><td><b>gpt-oss 120B</b></td><td class="num">63 GB</td><td>The best model this PC can run. Fits in the ~80 GB the engine can use (est. 35–50 tok/s).</td></tr>
+          <tr><td><b>Qwen3 Coder 30B</b></td><td class="num">18.6 GB</td><td>For writing code.</td></tr>
+          <tr><td><b>Gemma 3 27B</b></td><td class="num">17 GB</td><td>Reads images (drop a photo in Chat). Slower, ~10 tok/s.</td></tr>
+          <tr class="skip"><td><b>Llama 3.3 / DeepSeek-R1 70B</b></td><td class="num">42.5 GB</td><td>Skip unless curious: smart, but only ~5 tok/s here.</td></tr>
+        </tbody></table>
+      </div>
+      <div>
+        <h4><span class="badge npu">NPU</span> FastFlowLM or Lemonade (Ryzen AI NPU)</h4>
+        <table class="ptable"><thead><tr><th>Model</th><th>NPU speed</th><th>Notes</th></tr></thead><tbody>
+          <tr><td><b>Qwen3 8B</b><div class="small muted">Recommended</div></td><td class="num">~12 tok/s</td><td>Best all-rounder that fits the NPU.</td></tr>
+          <tr><td><b>gpt-oss 20B</b></td><td class="num">~18 tok/s</td><td>The largest model the NPU runs.</td></tr>
+          <tr><td><b>Qwen3 4B</b></td><td class="num">~20 tok/s</td><td>Quick everyday answers.</td></tr>
+          <tr><td><b>Llama 3.2 3B</b></td><td class="num">~25 tok/s</td><td>Small and quick (speed is an estimate).</td></tr>
+          <tr><td><b>Qwen3 1.7B</b></td><td class="num">~40 tok/s</td><td>Tiny and fast.</td></tr>
+          <tr><td><b>DeepSeek-R1 8B</b></td><td class="num">–</td><td>Lemonade Hybrid (NPU reads, GPU writes).</td></tr>
+        </tbody></table>
+        <p class="small muted" style="margin:8px 0 0">The GPU is about 3× faster than the NPU; the NPU's strength is very low power and leaving the GPU free. NPU speeds are FastFlowLM's published numbers from a smaller Ryzen AI chip with the same type of NPU, not measured on this PC.</p>
+      </div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">GPU speeds are estimates. Use the Benchmark tab for real numbers on your PC.</p>
+  </details>
   <div class="card budget">
     <div><label style="margin-top:0">GPU memory the engine can use (read from your PC automatically; drag to override)</label>
       <div class="range"><input type="range" id="budget" min="16" max="96" step="4"><output id="budgetOut"></output></div></div>
-    <div class="small muted" style="max-width:420px">On a 96 GB machine, 64 GB for the GPU is a solid start and leaves Windows 32 GB. Models marked <span style="color:var(--warn)">Tight</span> may still run by borrowing shared memory, just slower.</div>
+    <div class="small muted" style="max-width:420px">Set automatically from what the engine reports (about 76–80 GB on a 96 GB EVO-X2). Models marked <span style="color:var(--warn)">Tight</span> may still load; <span style="color:var(--bad)">Too big</span> ones won't.</div>
     <div class="spacer"></div>
     <div><label style="margin-top:0">Download any model by name</label>
       <div class="row"><input id="customTag" placeholder="e.g. qwen3:14b or hf.co/user/repo:Q4_K_M" style="width:300px"><button class="primary" id="customPull">Download</button></div></div>
@@ -820,6 +855,7 @@ function renderSetupBox(){
   $('#mdirSave').onclick=()=>hl('config',{modelsDir:$('#mdirIn').value.trim()}).then(()=>{toast('Models folder saved');el.dataset.h='';hlPoll()}).catch(x=>toast(x.message));
 }
 
+try{const pc=document.getElementById('picksCard');if(store.get('picksOpen',true)===false)pc.open=false;pc.addEventListener('toggle',()=>store.set('picksOpen',pc.open))}catch(e){}
 function renderNpu(){
   const el=$('#npuGrid');if(!el)return;
   el.innerHTML=NPU_MODELS.map(m=>`<div class="card mcard"><div class="t"><div><h3>${esc(m.name)}</h3><div class="tag">${esc(m.flm||m.lemon)}</div></div>
