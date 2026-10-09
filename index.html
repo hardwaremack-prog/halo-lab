@@ -143,6 +143,19 @@ td.num{font-family:var(--mono)}
 .setup code,.mono{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:13px}
 .urlrow{display:grid;grid-template-columns:140px 1fr auto;gap:8px;align-items:center;margin:6px 0}
 
+/* first run */
+.wiz{max-width:760px;margin:5vh auto 0;text-align:center}
+.wiz h3{font-size:22px;margin:10px 0 4px}
+.logo.big{width:52px;height:52px;margin:0 auto}
+.step{display:flex;gap:14px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;opacity:.55}
+.step.on{opacity:1;border-color:#5a3420}
+.step .num{width:28px;height:28px;border-radius:50%;background:var(--panel3);display:grid;place-items:center;font-weight:700;flex:none}
+.step.on .num{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
+.grow{flex:1;min-width:0}
+.picks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:16px;text-align:left}
+.pick{display:flex;flex-direction:column;gap:6px}.pick h4{margin:0}.pick.rec{border-color:#1f5a3a}
+.pick button{margin-top:4px}
+.loadline{margin:2px 0 6px}
 /* hardware */
 .hwmini{display:flex;gap:10px;align-items:center;cursor:pointer;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
 .hwmini.off{opacity:.55}
@@ -251,7 +264,7 @@ td.num{font-family:var(--mono)}
     </select>
     <label>Thinking (reasoning models)</label>
     <div class="seg" id="thinkSeg"><button data-v="auto">Auto</button><button data-v="on">On</button><button data-v="off">Off</button></div>
-    <p class="small muted">Context, keep-loaded and thinking apply to Ollama. LM Studio and Lemonade use their own settings for those.</p>
+    <p class="small muted">Context and thinking apply to the Halo Lab engine and Ollama. Keep-loaded applies to Ollama (the Halo Lab engine keeps a model loaded until you switch, unload or quit). LM Studio and Lemonade use their own settings.</p>
     <button class="full" id="exportChat" style="margin-top:8px">Export this chat (.md)</button>
   </div>
 </section>
@@ -278,7 +291,7 @@ td.num{font-family:var(--mono)}
   <h2>Model Library</h2>
   <p class="sub">Picked for a 96 GB Strix Halo machine. Fit and speed update with your GPU budget and context size. Speeds are rough estimates; use Benchmark for real numbers.</p>
   <div class="card budget">
-    <div><label style="margin-top:0">GPU memory budget (what you set in AMD Software or BIOS)</label>
+    <div><label style="margin-top:0">GPU memory the engine can use (read from your PC automatically; drag to override)</label>
       <div class="range"><input type="range" id="budget" min="16" max="96" step="4"><output id="budgetOut"></output></div></div>
     <div class="small muted" style="max-width:420px">On a 96 GB machine, 64 GB for the GPU is a solid start and leaves Windows 32 GB. Models marked <span style="color:var(--warn)">Tight</span> may still run by borrowing shared memory, just slower.</div>
     <div class="spacer"></div>
@@ -315,7 +328,7 @@ td.num{font-family:var(--mono)}
     <div class="card hwcard"><h3>Memory</h3>
       <label style="margin-top:6px">System RAM</label><div class="meter" style="height:10px"><i id="ramBar" style="width:0;background:var(--blue)"></i></div><div class="small muted" id="ramTxt">–</div>
       <label>GPU memory (dedicated)</label><div class="meter" style="height:10px"><i id="vramBar" style="width:0;background:var(--acc2)"></i></div><div class="small muted" id="vramTxt">–</div>
-      <label>GPU borrowing shared RAM</label><div class="small muted" id="sharedTxt">–</div>
+      <label>GPU using shared memory</label><div class="small muted" id="sharedTxt">–</div>
     </div>
   </div>
   <div class="card" style="margin-top:12px">
@@ -347,38 +360,32 @@ td.num{font-family:var(--mono)}
 <!-- SETUP -->
 <section id="setup"><div class="pad setup">
   <h2>Setup</h2>
-  <p class="sub">Halo Lab is the dashboard. The models run in an engine on this computer. Ollama is the easiest and works with every tab.</p>
+  <p class="sub">Halo Lab works on its own: open it with the desktop icon and everything else happens here. Nothing to install by hand.</p>
+  <div class="card" id="setupBox"></div>
+  <h3>How it works</h3>
+  <ol>
+    <li>The <b>Halo Lab</b> desktop icon starts a small background program (look for the orange ring near the clock). It opens this page, runs the CPU/GPU/NPU meters and manages the AI engine. Right-click the ring to quit.</li>
+    <li>The first time, Chat offers to <b>set up the AI engine</b>: llama.cpp's official Vulkan build, which runs models on the Radeon 8060S.</li>
+    <li>Models download from Hugging Face into the models folder above. When you chat with one, it loads into GPU memory by itself. Only one model is loaded at a time, and picking another swaps it automatically.</li>
+  </ol>
+  <h3>GPU memory</h3>
+  <ol>
+    <li>The engine uses the memory set aside for the GPU <i>plus</i> shared memory, so on a 96 GB EVO-X2 it can use about <b>76–80 GB</b> even with the default setting. Setup above and the Library show the real number for your PC.</li>
+    <li>That's enough for every model in the Library, including gpt-oss 120B. You only need to change anything if a model shows <b>Too big</b>.</li>
+    <li>If you do: <b>AMD Software: Adrenalin Edition</b> → <b>Performance</b> → <b>Tuning</b> → <b>Variable Graphics Memory</b> (also in the BIOS as the UMA frame buffer size), then restart. Leave Windows at least 16 GB.</li>
+  </ol>
+  <h3>Other engines (optional)</h3>
+  <ol>
+    <li><b>Ollama</b>: install from <span class="mono">ollama.com/download</span>, then pick Ollama at the top right. If the dot stays red, run <span class="mono">Fix Ollama connection.bat</span> once. Note: on Windows, Ollama may run this chip on the CPU only, which is much slower. Check the GPU meter while it answers.</li>
+    <li><b>LM Studio</b>: in the Developer tab, start the server and turn on <b>Enable CORS</b>. Download models in LM Studio's own Discover tab.</li>
+    <li><b>AMD Lemonade Server</b>: AMD's engine, and the way to put the <b>NPU</b> to work.</li>
+  </ol>
   <div class="card">
     <h3 style="margin-top:0">Engine addresses</h3>
     <div id="urlRows"></div>
   </div>
-  <h3>1. Install Ollama (recommended)</h3>
-  <ol>
-    <li>Download and install from <span class="mono">ollama.com/download</span> (Windows).</li>
-    <li>It runs in the system tray. The dot at the top right turns green when Halo Lab can see it.</li>
-    <li>Go to <b>Model Library</b> and press <b>Download</b> on a model. <b>Qwen3 30B-A3B</b> or <b>gpt-oss 20B</b> are great first picks: smart and very fast on this chip.</li>
-  </ol>
-  <h3>2. If the dot stays red</h3>
-  <p>Ollama blocks web pages it doesn't recognize. Run <span class="mono">Fix Ollama connection.bat</span> from the Halo Lab folder once, or do it by hand in PowerShell:</p>
-  <p><span class="mono">setx OLLAMA_ORIGINS "*"</span> then quit Ollama from the tray icon and start it again.</p>
-  <h3>3. Give the GPU more memory</h3>
-  <ol>
-    <li>Open <b>AMD Software: Adrenalin Edition</b> → <b>Performance</b> → <b>Tuning</b> and look for <b>Variable Graphics Memory</b>. (Menu names can shift between driver versions. The same setting is also in the BIOS as the UMA frame buffer size.)</li>
-    <li>On a 96 GB EVO-X2, <b>64 GB</b> is a good balance. Bigger lets you run gpt-oss 120B comfortably, but Windows needs at least 16 GB left over.</li>
-    <li>Restart, then set the same number in Model Library → GPU memory budget.</li>
-  </ol>
-  <h3>Other engines</h3>
-  <ol>
-    <li><b>LM Studio</b>: in the Developer tab, start the server and turn on <b>Enable CORS</b>. Chat, Arena and Benchmark work. Download models in LM Studio's own Discover tab.</li>
-    <li><b>AMD Lemonade Server</b>: AMD's engine that can also use the NPU. Default address is already filled in above.</li>
-    <li><b>llama.cpp server</b>: start <span class="mono">llama-server</span> with the Vulkan build. It reports exact timings to the Benchmark tab.</li>
-  </ol>
-  <h3>Hardware monitor (CPU, GPU and NPU meters)</h3>
-  <ol>
-    <li>Web pages can't read hardware sensors, so Halo Lab comes with a tiny helper, <span class="mono">halo-monitor.ps1</span>. It reads the same counters Task Manager uses and shares them only with this computer.</li>
-    <li>Start everything with <span class="mono">Start Halo Lab.bat</span>. It opens the monitor in a small minimized window and then opens the dashboard. Closing that window stops the monitor.</li>
-    <li>Seeing NPU activity needs Windows 11 24H2 or newer and AMD's NPU driver. If Task Manager's Performance tab shows an NPU, Halo Lab will too.</li>
-  </ol>
+  <h3>Hardware meters</h3>
+  <p>The CPU, GPU and NPU meters read the same counters Task Manager uses. Seeing NPU activity needs Windows 11 24H2 or newer and AMD's NPU driver.</p>
   <h3>Speed tips for this chip</h3>
   <ol>
     <li><b>MoE models fly here.</b> Models like Qwen3 30B-A3B and gpt-oss only use a few billion "active" parameters per word, so they run 30–60+ tok/s. Dense 70B models are smart but crawl at around 4–6 tok/s.</li>
@@ -400,15 +407,20 @@ const f=(v,d=1)=>v==null||!isFinite(v)?'–':v.toFixed(d);
 let toastT;function toast(m){let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',4200)}
 
 /* ---------- settings ---------- */
+const HL=(location.protocol.startsWith('http')&&location.port==='11500')?'':'http://localhost:11500';
 const BACKENDS={
+  halo:{label:'Halo Lab engine',type:'openai',url:(HL||location.origin)+'/v1'},
   ollama:{label:'Ollama',type:'ollama',url:'http://localhost:11434'},
   lmstudio:{label:'LM Studio',type:'openai',url:'http://localhost:1234/v1'},
   lemonade:{label:'AMD Lemonade',type:'openai',url:'http://localhost:8000/api/v1'},
   llamacpp:{label:'llama.cpp server',type:'openai',url:'http://localhost:8080/v1'}
 };
-const S=Object.assign({backend:'ollama',urls:{},gpuGB:64,temp:0.7,ctx:8192,keep:'30m',think:'auto',preset:'assistant',custom:'',model:''},store.get('settings',{}));
+const S=Object.assign({backend:'halo',urls:{},gpuGB:64,temp:0.7,ctx:8192,keep:'30m',think:'auto',preset:'assistant',custom:'',model:''},store.get('settings',{}));
+if(!S.v2){S.v2=true;S.backend='halo'}
+if(S.urls&&S.urls.halo)delete S.urls.halo;
 const saveS=()=>store.set('settings',S);
-const B=()=>{const b=BACKENDS[S.backend]||BACKENDS.ollama;return {...b,url:(S.urls[S.backend]||b.url).replace(/\/+$/,'')}};
+const isHalo=()=>S.backend==='halo';
+const B=()=>{const b=BACKENDS[S.backend]||BACKENDS.halo;return {...b,url:(S.urls[S.backend]||b.url).replace(/\/+$/,'')}};
 
 const PRESETS={
   assistant:'You are a helpful, precise assistant. Be direct and accurate, and say so when you are unsure.',
@@ -419,23 +431,23 @@ const PRESETS={
 };
 const systemText=()=>S.preset==='custom'?S.custom:PRESETS[S.preset];
 
-/* ---------- catalog (sizes are Ollama Q4-class downloads, approximate) ---------- */
+/* ---------- catalog (sizes are the Hugging Face downloads used by the Halo Lab engine) ---------- */
 const CATALOG=[
- {tag:'gpt-oss:120b',name:'gpt-oss 120B',maker:'OpenAI',params:'117B MoE',active:5.1,size:65,kv:.07,bpp:.55,kinds:['chat','reason'],ctx:'128K',note:'The flagship open model that fits this box. Strong reasoning at real conversational speed thanks to MoE. Needs ~70 GB of GPU memory.'},
- {tag:'gpt-oss:20b',name:'gpt-oss 20B',maker:'OpenAI',params:'21B MoE',active:3.6,size:14,kv:.05,bpp:.55,kinds:['chat','reason','fast'],ctx:'128K',note:'Fast, capable reasoning model. A great everyday default.'},
- {tag:'qwen3:30b',name:'Qwen3 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:19,kv:.1,bpp:.6,kinds:['chat','reason','fast'],ctx:'256K',note:'Very fast all-rounder with optional thinking mode. Excellent first download.'},
- {tag:'qwen3-coder:30b',name:'Qwen3 Coder 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:19,kv:.1,bpp:.6,kinds:['code','fast'],ctx:'256K',note:'Coding specialist. Quick enough to feel interactive.'},
- {tag:'llama4:scout',name:'Llama 4 Scout',maker:'Meta',params:'109B MoE',active:17,size:67,kv:.2,bpp:.6,kinds:['chat','vision'],ctx:'10M',note:'Huge MoE model that can also read images. Uses most of your memory.'},
- {tag:'llama3.3:70b',name:'Llama 3.3 70B',maker:'Meta',params:'70B dense',active:70,size:43,kv:.33,bpp:.6,kinds:['chat'],ctx:'128K',note:'Big, knowledgeable classic. Slow on any non-datacenter chip; good for careful answers you can wait for.'},
- {tag:'deepseek-r1:70b',name:'DeepSeek-R1 70B',maker:'DeepSeek',params:'70B dense',active:70,size:43,kv:.33,bpp:.6,kinds:['reason'],ctx:'128K',note:'Thinks out loud before answering. Strong at math and logic, slow to finish.'},
- {tag:'qwen3:32b',name:'Qwen3 32B',maker:'Alibaba',params:'32B dense',active:32,size:20,kv:.26,bpp:.6,kinds:['chat','reason'],ctx:'128K',note:'Dense sibling of the 30B-A3B: a bit smarter, several times slower.'},
- {tag:'deepseek-r1:32b',name:'DeepSeek-R1 32B',maker:'DeepSeek',params:'32B dense',active:32,size:20,kv:.26,bpp:.6,kinds:['reason'],ctx:'128K',note:'Mid-size reasoning model.'},
- {tag:'gemma3:27b',name:'Gemma 3 27B',maker:'Google',params:'27B dense',active:27,size:17,kv:.25,bpp:.6,kinds:['chat','vision'],ctx:'128K',note:'Well-rounded writer that understands images.'},
- {tag:'qwen2.5vl:32b',name:'Qwen2.5-VL 32B',maker:'Alibaba',params:'32B dense',active:32,size:21,kv:.26,bpp:.6,kinds:['vision'],ctx:'128K',note:'Reads screenshots, charts and documents well.'},
- {tag:'mistral-small3.2:24b',name:'Mistral Small 3.2',maker:'Mistral',params:'24B dense',active:24,size:15,kv:.16,bpp:.6,kinds:['chat','vision'],ctx:'128K',note:'Snappy, follows instructions well, sees images.'},
- {tag:'devstral:24b',name:'Devstral 24B',maker:'Mistral',params:'24B dense',active:24,size:14,kv:.16,bpp:.6,kinds:['code'],ctx:'128K',note:'Built for coding agents and multi-file edits.'},
- {tag:'phi4:14b',name:'Phi-4 14B',maker:'Microsoft',params:'14B dense',active:14,size:9.1,kv:.2,bpp:.6,kinds:['chat','reason','fast'],ctx:'16K',note:'Small but sharp at math and logic.'},
- {tag:'llama3.2:3b',name:'Llama 3.2 3B',maker:'Meta',params:'3B dense',active:3,size:2,kv:.11,bpp:.65,kinds:['fast'],ctx:'128K',note:'Tiny and instant. Handy for testing that everything works.'}
+ {tag:'gpt-oss:120b',hf:{repo:'ggml-org/gpt-oss-120b-GGUF',quant:'MXFP4'},name:'gpt-oss 120B',maker:'OpenAI',params:'117B MoE',active:5.1,size:63.4,kv:.07,bpp:.55,kinds:['chat','reason'],ctx:'128K',note:'The flagship open model that fits this box. Strong reasoning at real conversational speed thanks to MoE. Needs about 68 GB of GPU memory, which a 96 GB EVO-X2 has.'},
+ {tag:'gpt-oss:20b',hf:{repo:'ggml-org/gpt-oss-20b-GGUF',quant:'MXFP4'},name:'gpt-oss 20B',maker:'OpenAI',params:'21B MoE',active:3.6,size:12.1,kv:.05,bpp:.55,kinds:['chat','reason','fast'],ctx:'128K',note:'Fast, capable reasoning model. A great everyday default.'},
+ {tag:'qwen3:30b',hf:{repo:'unsloth/Qwen3-30B-A3B-GGUF',quant:'Q4_K_M'},name:'Qwen3 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:18.6,kv:.1,bpp:.6,kinds:['chat','reason','fast'],ctx:'256K',note:'Very fast all-rounder with optional thinking mode. Excellent first download.'},
+ {tag:'qwen3-coder:30b',hf:{repo:'unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF',quant:'Q4_K_M'},name:'Qwen3 Coder 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:18.6,kv:.1,bpp:.6,kinds:['code','fast'],ctx:'256K',note:'Coding specialist. Quick enough to feel interactive.'},
+ {tag:'llama4:scout',hf:{repo:'unsloth/Llama-4-Scout-17B-16E-Instruct-GGUF',quant:'Q4_K_M',vision:true},name:'Llama 4 Scout',maker:'Meta',params:'109B MoE',active:17,size:67.1,kv:.2,bpp:.6,kinds:['chat','vision'],ctx:'10M',note:'Huge MoE model that can also read images. Uses most of your memory.'},
+ {tag:'llama3.3:70b',hf:{repo:'bartowski/Llama-3.3-70B-Instruct-GGUF',quant:'Q4_K_M'},name:'Llama 3.3 70B',maker:'Meta',params:'70B dense',active:70,size:42.5,kv:.33,bpp:.6,kinds:['chat'],ctx:'128K',note:'Big, knowledgeable classic. Slow on any non-datacenter chip; good for careful answers you can wait for.'},
+ {tag:'deepseek-r1:70b',hf:{repo:'bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF',quant:'Q4_K_M'},name:'DeepSeek-R1 70B',maker:'DeepSeek',params:'70B dense',active:70,size:42.5,kv:.33,bpp:.6,kinds:['reason'],ctx:'128K',note:'Thinks out loud before answering. Strong at math and logic, slow to finish.'},
+ {tag:'qwen3:32b',hf:{repo:'Qwen/Qwen3-32B-GGUF',quant:'Q4_K_M'},name:'Qwen3 32B',maker:'Alibaba',params:'32B dense',active:32,size:19.8,kv:.26,bpp:.6,kinds:['chat','reason'],ctx:'128K',note:'Dense sibling of the 30B-A3B: a bit smarter, several times slower.'},
+ {tag:'deepseek-r1:32b',hf:{repo:'bartowski/DeepSeek-R1-Distill-Qwen-32B-GGUF',quant:'Q4_K_M'},name:'DeepSeek-R1 32B',maker:'DeepSeek',params:'32B dense',active:32,size:19.9,kv:.26,bpp:.6,kinds:['reason'],ctx:'128K',note:'Mid-size reasoning model.'},
+ {tag:'gemma3:27b',hf:{repo:'ggml-org/gemma-3-27b-it-GGUF',quant:'Q4_K_M',vision:true},name:'Gemma 3 27B',maker:'Google',params:'27B dense',active:27,size:17.4,kv:.25,bpp:.6,kinds:['chat','vision'],ctx:'128K',note:'Well-rounded writer that understands images.'},
+ {tag:'qwen2.5vl:32b',hf:{repo:'ggml-org/Qwen2.5-VL-32B-Instruct-GGUF',quant:'Q4_K_M',vision:true},name:'Qwen2.5-VL 32B',maker:'Alibaba',params:'32B dense',active:32,size:21.2,kv:.26,bpp:.6,kinds:['vision'],ctx:'128K',note:'Reads screenshots, charts and documents well.'},
+ {tag:'mistral-small3.2:24b',hf:{repo:'unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF',quant:'Q4_K_M',vision:true},name:'Mistral Small 3.2',maker:'Mistral',params:'24B dense',active:24,size:15.2,kv:.16,bpp:.6,kinds:['chat','vision'],ctx:'128K',note:'Snappy, follows instructions well, sees images.'},
+ {tag:'devstral:24b',hf:{repo:'unsloth/Devstral-Small-2507-GGUF',quant:'Q4_K_M'},name:'Devstral 24B',maker:'Mistral',params:'24B dense',active:24,size:14.3,kv:.16,bpp:.6,kinds:['code'],ctx:'128K',note:'Built for coding agents and multi-file edits.'},
+ {tag:'phi4:14b',hf:{repo:'bartowski/phi-4-GGUF',quant:'Q4_K_M'},name:'Phi-4 14B',maker:'Microsoft',params:'14B dense',active:14,size:9.1,kv:.2,bpp:.6,kinds:['chat','reason','fast'],ctx:'16K',note:'Small but sharp at math and logic.'},
+ {tag:'llama3.2:3b',hf:{repo:'bartowski/Llama-3.2-3B-Instruct-GGUF',quant:'Q4_K_M'},name:'Llama 3.2 3B',maker:'Meta',params:'3B dense',active:3,size:2.0,kv:.11,bpp:.65,kinds:['fast'],ctx:'128K',note:'Tiny and instant. Handy for testing that everything works.'}
 ];
 const KINDS={all:'All',chat:'General',reason:'Reasoning',code:'Coding',vision:'Sees images',fast:'Fast'};
 let libFilter='all';
@@ -446,8 +458,88 @@ async function errText(r){let t='';try{t=await r.text();const j=JSON.parse(t);t=
 async function api(path,opt={}){const o={...opt};if(o.body)o.headers={'Content-Type':'application/json'};const r=await fetch(B().url+path,o);if(!r.ok)throw new Error(await errText(r));const t=await r.text();try{return JSON.parse(t)}catch(e){return t}}
 async function* readLines(resp){const rd=resp.body.getReader(),dec=new TextDecoder();let buf='';for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;while((i=buf.indexOf('\n'))>=0){const l=buf.slice(0,i).trim();buf=buf.slice(i+1);if(l)yield l}}if(buf.trim())yield buf.trim()}
 function setStatus(cls,txt){$('#connDot').className='dot '+cls;$('#connText').textContent=txt;$('#connText').title=txt}
+/* GPU memory for the Library's fit check: what the engine reports it can use (Vulkan sees the
+   dedicated memory plus what Windows lets it share), or else what's set aside in AMD Software */
+function vulkanGB(){const d=(HLS?.engine?.devices||[]).find(x=>/^(Vulkan|ROCm|HIP|CUDA)/.test(x.id));const m=d&&/\((\d+) MiB/.exec(d.name);return m?+m[1]/1024:0}
+function autoBudget(){
+  if(S.budgetManual)return;
+  const v=Math.max(vulkanGB(),HW.data?.gpu?.dedicatedTotalGB||0);if(!v)return;
+  const g=Math.max(16,Math.min(96,Math.floor(v/4)*4));
+  if(g!==S.gpuGB){S.gpuGB=g;saveS();loadSettingsUI();renderLibrary()}
+}
+/* ----- Halo Lab engine (halo-server.ps1) ----- */
+let HLS=null,hlTimer=null,dlPrev={},engineToastShown=false,wasInstalling=false;
+async function hl(path,body){
+  const r=await fetch(HL+'/api/hl/'+path,body===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(j.error||('Halo Lab server error '+r.status));
+  return j;
+}
+function hlStatusText(){
+  if(!HLS)return 'Halo Lab not running';
+  const s=HLS.server||{};
+  if(HLS.engine?.installing)return 'Setting up the AI engine…';
+  if(!HLS.engine?.installed)return 'Engine not set up yet';
+  if(s.state==='loading')return 'Loading '+s.model+'…';
+  if(s.state==='ready')return s.model+' ready';
+  if(s.state==='failed')return s.model+' failed to load';
+  return 'Engine ready · no model loaded';
+}
+async function hlPoll(){
+  clearTimeout(hlTimer);
+  if(!isHalo())return;
+  let ok=true;
+  try{HLS=await hl('status')}catch(e){ok=false;HLS=null}
+  const was=connected;connected=ok;
+  if(ok){
+    const now=performance.now();
+    for(const [k,d] of Object.entries(HLS.downloads||{})){
+      const o=dlPrev[k];
+      if(o&&d.status===o.status&&d.done>o.done&&now>o.t){const r=(d.done-o.done)/((now-o.t)/1000);d.rate=r>1e6?(r/1e6).toFixed(0)+' MB/s':(r/1e3).toFixed(0)+' KB/s';
+        if(d.total>d.done&&r>0){const left=(d.total-d.done)/r;d.rate+=' · '+(left>5400?Math.round(left/3600)+' h':left>90?Math.round(left/60)+' min':Math.round(left)+' s')+' left'}}
+      else if(o?.rate&&d.status===o.status)d.rate=o.rate;
+      dlPrev[k]={done:d.done,status:d.status,t:now,rate:d.rate};
+      if(d.status==='done'){toast(`${d.name||k} is downloaded and ready to chat.`);hl('dismiss',{id:k}).catch(()=>{});if(!S.model||!installed.length){S.model=k;saveS()}}
+    }
+    if(HLS.engine?.status==='done'&&!engineToastShown){engineToastShown=true;if(HLS.engine.installed&&wasInstalling)toast('The AI engine is set up.')}
+    wasInstalling=!!HLS.engine?.installing;
+    autoBudget();
+    const prev=installed.map(m=>m.name).join('|');
+    installed=(HLS.models||[]).map(m=>({name:m.id,size:m.bytes,params:'',quant:m.quant,vision:m.vision,repo:m.repo})).sort((a,b)=>a.name.localeCompare(b.name));
+    const st=HLS.server?.state;
+    setStatus(st==='failed'?'bad':(st==='loading'||HLS.engine?.installing||!HLS.engine?.installed)?'wait':'ok',hlStatusText());
+    if(prev!==installed.map(m=>m.name).join('|')){renderModelSelects();renderBenchModels()}
+  }else{installed=[];setStatus('bad','Halo Lab not running');if(was)renderModelSelects()}
+  renderBanner();
+  renderLibrary();renderSetupBox();
+  if(!cur().messages.length)renderChat();
+  if(curTab==='running')refreshPs();
+  const busy=ok&&(HLS.engine?.installing||HLS.server?.state==='loading'||Object.values(HLS.downloads||{}).some(d=>!['done','failed','cancelled'].includes(d.status)));
+  hlTimer=setTimeout(hlPoll,!ok?4000:busy?1000:4000);
+}
+// make sure the chosen model is loaded in the Halo Lab engine before chatting
+async function ensureLoaded(model,ctx,onStatus,signal){
+  const want=ctx||S.ctx;
+  let s=(await hl('status')).server;
+  if(s.state==='ready'&&s.model===model&&s.ctx===want)return 0;
+  const t0=performance.now();
+  await hl('load',{id:model,ctx:want});
+  for(;;){
+    if(signal?.aborted)throw new DOMException('Stopped','AbortError');
+    await new Promise(r=>setTimeout(r,700));
+    const j=await hl('status');HLS=j;s=j.server;
+    const secs=Math.round((performance.now()-t0)/1000);
+    if(s.state==='ready')return (performance.now()-t0)/1000;
+    if(s.state==='failed')throw new Error(s.error+(s.detail?' ('+s.detail.slice(0,300)+')':''));
+    if(s.state==='stopped')throw new Error('The model was unloaded.');
+    onStatus&&onStatus(`Loading ${model} into GPU memory… ${secs}s${secs>20?' (big models take a minute or two the first time)':''}`);
+  }
+}
+
 async function connect(){
-  setStatus('wait','Connecting to '+B().label+'…');
+  setStatus('wait','Connecting to '+B().label+'…');customHint();
+  if(isHalo()){await hlPoll();renderModelSelects();return}
+  clearTimeout(hlTimer);
   try{
     if(B().type==='ollama'){const v=await api('/api/version');setStatus('ok',`${B().label} ${v.version||''}`)}
     else{await api('/models');setStatus('ok',B().label)}
@@ -456,6 +548,7 @@ async function connect(){
   renderBanner();if(curTab==='running')refreshPs();
 }
 async function refreshModels(){
+  if(isHalo())return hlPoll();
   if(B().type==='ollama'){const j=await api('/api/tags');installed=(j.models||[]).map(m=>({name:m.name,size:m.size,params:m.details?.parameter_size||'',quant:m.details?.quantization_level||''}))}
   else{const j=await api('/models');installed=(j.data||[]).map(m=>({name:m.id,size:0,params:'',quant:''}))}
   installed.sort((a,b)=>a.name.localeCompare(b.name));
@@ -464,6 +557,7 @@ async function refreshModels(){
 const isInstalled=tag=>installed.some(m=>m.name===tag||m.name===tag+':latest');
 function friendlyErr(e){
   const m=String(e.message||e);
+  if(isHalo()&&(e.name==='TypeError'||/Failed to fetch|NetworkError/i.test(m)))return 'Halo Lab isn\'t running. Open it from the Halo Lab icon on your desktop.';
   if(e.name==='TypeError'||/Failed to fetch|NetworkError/i.test(m))return `Can't reach ${B().label} at ${B().url}. Make sure it's running. If it is, see Setup → "If the dot stays red".`;
   if(/does not support thinking/i.test(m))return 'This model has no thinking mode. Set Thinking to Auto in the settings panel.';
   if(/does not support images|vision/i.test(m))return 'This model can\'t read images. Pick one tagged "Sees images" in the Library.';
@@ -472,7 +566,9 @@ function friendlyErr(e){
 }
 
 /* streaming chat for both engine types */
-async function streamChat({model,messages,onDelta,signal,temp,maxTok,ctx}){
+async function streamChat({model,messages,onDelta,signal,temp,maxTok,ctx,onStatus}){
+  let loadSec=0;
+  if(isHalo())loadSec=await ensureLoaded(model,ctx,onStatus,signal);
   const b=B(),t0=performance.now();let ttft=null,out='',think='',st={};
   const mark=()=>{if(ttft==null)ttft=performance.now()-t0};
   if(b.type==='ollama'){
@@ -493,6 +589,7 @@ async function streamChat({model,messages,onDelta,signal,temp,maxTok,ctx}){
     const body={model,stream:true,temperature:temp??S.temp,stream_options:{include_usage:true},
       messages:messages.map(m=>m.images?.length?{role:m.role,content:[{type:'text',text:m.content},...m.images.map(u=>({type:'image_url',image_url:{url:u}}))]}:{role:m.role,content:m.content})};
     if(maxTok)body.max_tokens=maxTok;
+    if(isHalo()&&S.think!=='auto'){body.chat_template_kwargs={enable_thinking:S.think==='on'};if(/gpt-oss/.test(model))body.reasoning_effort=S.think==='on'?'high':'low'}
     const r=await fetch(b.url+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
     if(!r.ok)throw new Error(await errText(r));
     let chunks=0;
@@ -504,6 +601,7 @@ async function streamChat({model,messages,onDelta,signal,temp,maxTok,ctx}){
       if(j.timings){st.genTok=j.timings.predicted_n;st.genSec=j.timings.predicted_ms/1000;st.promptTok=j.timings.prompt_n;st.promptSec=j.timings.prompt_ms/1000}
     }
     if(!st.genTok)st.genTok=chunks;
+    if(loadSec)st.loadSec=loadSec;
   }
   st.total=(performance.now()-t0)/1000;st.ttft=ttft!=null?ttft/1000:null;
   if(!st.genSec&&st.genTok&&st.ttft!=null)st.genSec=Math.max(.001,st.total-st.ttft);
@@ -553,15 +651,48 @@ const STARTERS=[
  ['Think it through','A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Show your reasoning.'],
  ['Plan something','Make a weekend plan to clean out and organize a two-car garage, with a shopping list.']
 ];
+// first-run steps for the Halo Lab engine; returns '' when everything is ready
+const FIRST=['qwen3:30b','gpt-oss:20b','gpt-oss:120b'];
+function setupHTML(){
+  if(!isHalo())return '';
+  if(!connected)return `<div class="wiz"><div class="logo big"></div><h3>Halo Lab isn't running</h3>
+    <p class="muted">Open Halo Lab with the <b>Halo Lab</b> icon on your desktop. It runs quietly in the background (look for the orange ring near the clock) and opens this page.</p>
+    <p class="small muted">Prefer another engine? Pick Ollama or LM Studio at the top right.</p></div>`;
+  const e=HLS.engine||{};
+  if(!e.installed||e.installing){
+    const pct=e.total?Math.round(e.done/e.total*100):0;
+    return `<div class="wiz"><div class="logo big"></div><h3>Welcome to Halo Lab</h3>
+    <p class="muted">Two quick steps and you're chatting with AI that runs entirely on this computer.</p>
+    <div class="step on"><div class="num">1</div><div class="grow"><b>Set up the AI engine</b><div class="small muted">One time, about 35 MB. It's llama.cpp's Vulkan build, which runs models on the Radeon 8060S.</div>
+      ${e.installing?`<div class="prog" style="margin-top:8px">${esc(e.status||'Working')}…${e.total?` ${pct}%`:''}</div><div class="meter" style="margin-top:4px"><i style="width:${e.status==='Unpacking'?100:pct}%;background:var(--blue)"></i></div>`:
+      `<button class="primary" id="wizEngine" style="margin-top:10px">Set up the engine</button>${e.error?`<div class="err">${esc(e.error)}</div>`:''}`}</div></div>
+    <div class="step"><div class="num">2</div><div class="grow"><b>Pick your first model</b><div class="small muted">Next.</div></div></div></div>`;
+  }
+  if(!installed.length){
+    return `<div class="wiz"><div class="logo big"></div><h3>Pick your first model</h3>
+    <p class="muted">Models download once (they're big) and then work without the internet. You can add more any time in the Model Library.</p>
+    <div class="picks">${FIRST.map((t,i)=>{const c=CATALOG.find(x=>x.tag===t),p=dlState(t),ft=fit(c);
+      return `<div class="card pick ${i===0?'rec':''}">${i===0?'<span class="badge ok" style="align-self:flex-start">Recommended</span>':''}<h4>${esc(c.name)}</h4><div class="small muted">${esc(c.note)}</div>
+      <div class="small" style="margin-top:auto">${c.size} GB download · ~${estTps(c)} tok/s${ft.cls!=='ok'?` · <span style="color:var(--${ft.cls})">needs ~${ft.need.toFixed(0)} GB of GPU memory</span>`:''}</div>
+      ${p&&p.active?`<div class="prog">${pullText(p)}</div><div class="meter"><i style="width:${p.pct||0}%;background:var(--blue)"></i></div><button data-cancel="${t}">Cancel</button>`:
+        `${p&&p.failed?`<div class="err">${esc(p.error)}</div>`:''}<button class="${i===0?'primary':''}" data-pull-btn="${t}">${p&&p.paused?'Resume':p&&p.failed?'Retry':'Download'}</button>`}</div>`}).join('')}</div>
+    <p class="small muted" style="margin-top:14px">Downloads go to ${esc(HLS.disk?.modelsDir||'')}${HLS.disk?.freeGB!=null?` (${HLS.disk.freeGB} GB free)`:''}. You can change the folder in Setup.</p></div>`;
+  }
+  return '';
+}
 function renderChat(){
   const c=cur(),box=$('#msgs');
   if(!c.messages.length){
+    const w=setupHTML();
+    if(w){if(box.dataset.wiz!==w){box.dataset.wiz=w;box.innerHTML=w;const b=$('#wizEngine');if(b)b.onclick=()=>{b.disabled=true;hl('engine/install').then(hlPoll).catch(e=>{toast(friendlyErr(e));b.disabled=false})}}return}
+    box.dataset.wiz='';
+    if(box.querySelector('.starters'))return;
     box.innerHTML=`<div class="empty"><div class="logo" style="width:52px;height:52px;margin:0 auto"></div><h3>Your private AI lab</h3><p class="muted">Running on the Radeon 8060S. Nothing leaves this computer.${installed.length?'':' Download a model in the Model Library to get started.'}</p>
     <div class="starters">${STARTERS.map(s=>`<button data-p="${esc(s[1])}"><b>${s[0]}</b><span class="muted small">${esc(s[1].slice(0,70))}…</span></button>`).join('')}</div></div>`;
     box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{$('#input').value=b.dataset.p;autosize();$('#input').focus()});
     return;
   }
-  box.innerHTML='';c.messages.forEach(m=>{const d=document.createElement('div');d.className='msg '+m.role;fillMsg(d,m);box.appendChild(d)});
+  box.dataset.wiz='';box.innerHTML='';c.messages.forEach(m=>{const d=document.createElement('div');d.className='msg '+m.role;fillMsg(d,m);box.appendChild(d)});
   box.scrollTop=box.scrollHeight;
 }
 function fillMsg(d,m){
@@ -569,6 +700,7 @@ function fillMsg(d,m){
   if(m.role==='assistant'){h+=`<div class="who">${esc(m.model||'')}</div>`;
     if(think)h+=`<details class="think"${m.streaming&&!text?' open':''}><summary>${m.streaming&&!text?'Thinking…':'Thought process'}</summary><div>${md(think)}</div></details>`}
   if(m.images?.length)h+=`<div class="imgs">${m.images.map(u=>`<img src="${u}" alt="">`).join('')}</div>`;
+  if(m.loading&&m.streaming&&!m.content)h+=`<div class="small muted loadline">${esc(m.loading)}</div>`;
   h+=`<div class="body">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(text)}${m.streaming?'<span class="caret"></span>':''}</div>`;
   h+=statsHTML(m.stats);if(m.error)h+=`<div class="err">${esc(m.error)}</div>`;
   d.innerHTML=h;
@@ -588,11 +720,12 @@ async function send(){
   const el=$('#msgs').lastElementChild,sys=systemText();
   const msgs=(sys?[{role:'system',content:sys}]:[]).concat(c.messages.slice(0,-1).map(m=>({role:m.role,content:m.content,images:m.images})));
   abortCtl=new AbortController();setBusy(true);let raf=0;hwStart();
-  try{const res=await streamChat({model,messages:msgs,signal:abortCtl.signal,onDelta:(t,th)=>{am.content=t;am.think=th;if(!raf)raf=requestAnimationFrame(()=>{raf=0;const stick=nearBottom();fillMsg(el,am);if(stick)$('#msgs').scrollTop=1e9})}});
-    am.content=res.text;am.think=res.think;am.stats=res.stats;const hw=hwEnd();if(hw)am.stats.hw=hw}
-  catch(e){am.error=e.name==='AbortError'?'Stopped.':friendlyErr(e)}
+  try{const res=await streamChat({model,messages:msgs,signal:abortCtl.signal,onStatus:t=>{am.loading=t;hwStart();fillMsg(el,am)},onDelta:(t,th)=>{am.content=t;am.think=th;if(!raf)raf=requestAnimationFrame(()=>{raf=0;const stick=nearBottom();fillMsg(el,am);if(stick)$('#msgs').scrollTop=1e9})}});
+    am.loading=null;am.content=res.text;am.think=res.think;am.stats=res.stats;const hw=hwEnd();if(hw)am.stats.hw=hw}
+  catch(e){am.loading=null;am.error=e.name==='AbortError'?'Stopped.':friendlyErr(e)}
   cancelAnimationFrame(raf);HW.peak=null;am.streaming=false;fillMsg(el,am);abortCtl=null;setBusy(false);saveChats();
   if(B().type==='ollama'&&curTab==='running')refreshPs();
+  if(isHalo())hlPoll();
 }
 $('#sendBtn').onclick=send;
 $('#input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
@@ -637,20 +770,39 @@ $('#temp').oninput=e=>{S.temp=+e.target.value;$('#tempOut').textContent=S.temp;s
 $('#ctx').onchange=e=>{S.ctx=+e.target.value;saveS();renderLibrary()};
 $('#keep').onchange=e=>{S.keep=e.target.value;saveS()};
 $('#thinkSeg').onclick=e=>{const v=e.target.dataset.v;if(!v)return;S.think=v;saveS();loadSettingsUI()};
-$('#budget').oninput=e=>{S.gpuGB=+e.target.value;saveS();loadSettingsUI();renderLibrary()};
+$('#budget').oninput=e=>{S.gpuGB=+e.target.value;S.budgetManual=true;saveS();loadSettingsUI();renderLibrary()};
 
 /* ---------- backend picker ---------- */
 $('#backendSel').innerHTML=Object.entries(BACKENDS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 $('#backendSel').value=S.backend;
 $('#backendSel').onchange=e=>{S.backend=e.target.value;saveS();connect()};
 $('#reconnect').onclick=connect;
-function renderBanner(){$('#connBanner').innerHTML=connected?'':`<div class="banner">Can't reach <b>${esc(B().label)}</b> at ${esc(B().url)}. Is it running? <a id="goSetup">Open Setup</a></div>`;const g=$('#goSetup');if(g)g.onclick=()=>showTab('setup')}
+function renderBanner(){if(isHalo()){const e=HLS?.engine;const html=(connected&&e?.installed&&Array.isArray(e.devices)&&!e.gpu)?`<div class="banner"><b>The AI engine can't see your Radeon GPU</b>, so models are running on the CPU (several times slower). Update the AMD graphics driver from amd.com, restart the PC, then press <b>Update engine</b> in Setup. <a id="goSetup">Open Setup</a></div>`:'';if($('#connBanner').dataset.h!==html){$('#connBanner').dataset.h=html;$('#connBanner').innerHTML=html;const g=$('#goSetup');if(g)g.onclick=()=>showTab('setup')}return}$('#connBanner').innerHTML=connected?'':`<div class="banner">Can't reach <b>${esc(B().label)}</b> at ${esc(B().url)}. Is it running? <a id="goSetup">Open Setup</a></div>`;const g=$('#goSetup');if(g)g.onclick=()=>showTab('setup')}
 function renderUrlRows(){$('#urlRows').innerHTML=Object.entries(BACKENDS).map(([k,v])=>`<div class="urlrow"><span>${v.label}</span><input data-k="${k}" value="${esc(S.urls[k]||v.url)}"><button data-reset="${k}" class="ghost small">Default</button></div>`).join('');
   $$('#urlRows input').forEach(i=>i.onchange=()=>{S.urls[i.dataset.k]=i.value.trim();saveS();if(i.dataset.k===S.backend)connect()});
   $$('#urlRows [data-reset]').forEach(b=>b.onclick=()=>{delete S.urls[b.dataset.reset];saveS();renderUrlRows();if(b.dataset.reset===S.backend)connect()});
   $('#urlRows').insertAdjacentHTML('beforeend',`<div class="urlrow"><span>Hardware monitor</span><input id="monUrlIn" value="${esc(monUrl())}"><button id="monReset" class="ghost small">Default</button></div>`);
   $('#monUrlIn').onchange=e=>{S.monUrl=e.target.value.trim();saveS();pollHw()};
   $('#monReset').onclick=()=>{delete S.monUrl;saveS();renderUrlRows();pollHw()}}
+
+function renderSetupBox(){
+  const el=$('#setupBox');if(!el||curTab!=='setup')return;
+  if(!isHalo()){el.innerHTML=`<b>Using ${esc(B().label)}</b><div class="small muted">Switch to <b>Halo Lab engine</b> at the top right to use the built-in engine.</div>`;return}
+  if(!HLS){el.innerHTML=`<b style="color:var(--bad)">Halo Lab isn't running.</b><div class="small muted">Open it with the Halo Lab icon on your desktop.</div>`;return}
+  const e=HLS.engine||{},s=HLS.server||{};
+  const html=`<div class="row" style="justify-content:space-between"><div><b>Halo Lab engine</b>
+    <div class="small muted">${e.installed?`llama.cpp ${esc(e.version)} (Vulkan)`:'Not set up yet'} · ${esc(hlStatusText())}</div>
+    ${e.installed&&Array.isArray(e.devices)?`<div class="small" style="margin-top:4px">${e.gpu?`<span style="color:var(--ok)">GPU found:</span> ${e.devices.map(d=>esc(d.name)).join(', ')}`:`<span style="color:var(--bad)">No GPU found. Models run on the CPU.</span> Update the AMD graphics driver, restart, then press Update engine.`} · <a href="${HL}/api/hl/log" target="_blank" style="color:var(--acc2)">Engine log</a></div>`:''}</div>
+    <button id="engReinstall" class="ghost small">${e.installed?'Update engine':'Set up engine'}</button></div>
+    <label>Models folder${HLS.disk?.freeGB!=null?` (${HLS.disk.freeGB} GB free)`:''}</label>
+    <div class="row"><input id="mdirIn" style="flex:1;min-width:220px" value="${esc(HLS.disk?.modelsDir||'')}"><button id="mdirSave">Save</button></div>
+    <div class="small muted" style="margin-top:4px">Big models need a lot of space (gpt-oss 120B is 63 GB). Point this at a roomy drive if you like. Models already downloaded stay in the old folder.</div>`;
+  if(el.dataset.h===html)return;
+  if(el.contains(document.activeElement)&&document.activeElement.id==='mdirIn')return;
+  el.dataset.h=html;el.innerHTML=html;
+  $('#engReinstall').onclick=()=>{if(e.installed&&!confirm('Download the newest engine version now?'))return;hl('engine/install').then(()=>{toast('Setting up the engine…');hlPoll()}).catch(x=>toast(friendlyErr(x)))};
+  $('#mdirSave').onclick=()=>hl('config',{modelsDir:$('#mdirIn').value.trim()}).then(()=>{toast('Models folder saved');el.dataset.h='';hlPoll()}).catch(x=>toast(x.message));
+}
 
 /* ---------- library ---------- */
 const pulls={};
@@ -661,29 +813,57 @@ function renderLibrary(){
   $('#filters').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button data-k="${k}" class="${k===libFilter?'on':''}">${v}</button>`).join('');
   $$('#filters button').forEach(b=>b.onclick=()=>{libFilter=b.dataset.k;renderLibrary()});
   const list=CATALOG.filter(e=>libFilter==='all'||e.kinds.includes(libFilter));
-  const isOl=B().type==='ollama';
-  $('#libGrid').innerHTML=list.map(e=>{const ft=fit(e),inst=isInstalled(e.tag),p=pulls[e.tag],pct=Math.min(100,ft.need/96*100);
+  const isOl=B().type==='ollama',canDl=isOl||isHalo(),canDel=isOl||isHalo();
+  $('#libGrid').innerHTML=list.map(e=>{const ft=fit(e),inst=isInstalled(e.tag),p=dlState(e.tag),pct=Math.min(100,ft.need/96*100);
     return `<div class="card mcard"><div class="t"><div><h3>${esc(e.name)}</h3><div class="tag">${esc(e.tag)} · ${esc(e.maker)}</div></div>
     <div class="badges">${inst?'<span class="badge inst">Installed</span>':''}<span class="badge ${ft.cls}">${ft.label}</span></div></div>
     <div class="badges">${e.kinds.map(k=>`<span class="badge">${KINDS[k]}</span>`).join('')}</div>
     <div class="small muted">${esc(e.note)}</div>
     <div class="kv"><div><span>Size</span>${e.params}</div><div><span>Memory @ ${S.ctx/1024}K ctx</span>~${ft.need.toFixed(0)} GB</div><div><span>Est. speed</span>~${estTps(e)} tok/s</div></div>
     <div class="meter" title="Share of 96 GB"><i style="width:${pct}%;background:var(--${ft.cls})"></i><i style="left:${S.gpuGB/96*100}%;width:2px;background:#fff8;border-radius:0"></i></div>
-    ${p?`<div class="prog" data-pull="${esc(e.tag)}">${pullText(p)}</div><div class="meter"><i data-pbar="${esc(e.tag)}" style="width:${p.pct||0}%;background:var(--blue)"></i></div>`:''}
-    <div class="acts">${inst?`<button class="primary" data-chat="${esc(e.tag)}">Chat</button>${isOl?`<button class="danger ghost" data-del="${esc(e.tag)}">Delete</button>`:''}`:
-      p?`<button data-cancel="${esc(e.tag)}">Cancel</button>`:`<button class="primary" data-pull-btn="${esc(e.tag)}" ${isOl?'':'disabled title="Downloads work with Ollama"'}>Download ${e.size} GB</button>`}</div></div>`}).join('');
+    ${p&&p.active?`<div class="prog" data-pull="${esc(e.tag)}">${pullText(p)}</div><div class="meter"><i data-pbar="${esc(e.tag)}" style="width:${p.pct||0}%;background:var(--blue)"></i></div>`:''}
+    ${p&&p.failed?`<div class="err">${esc(p.error)}</div>`:''}${p&&p.paused?`<div class="small muted">Download paused. Press Resume to continue where it stopped.</div>`:''}
+    <div class="acts">${inst?`<button class="primary" data-chat="${esc(e.tag)}">Chat</button>${canDel?`<button class="danger ghost" data-del="${esc(e.tag)}">Delete</button>`:''}`:
+      p&&p.active?`<button data-cancel="${esc(e.tag)}">Cancel</button>`:p&&p.failed?`<button class="primary" data-pull-btn="${esc(e.tag)}">Retry</button><button class="ghost" data-dismiss="${esc(e.tag)}">Dismiss</button>`:`<button class="primary" data-pull-btn="${esc(e.tag)}" ${canDl?'':'disabled title="Download models with the Halo Lab engine or Ollama"'}>${p&&p.paused?'Resume':'Download'} ${e.size} GB</button>`}</div></div>`}).join('');
   const others=installed.filter(m=>!CATALOG.some(c=>c.tag===m.name||c.tag+':latest'===m.name));
-  $('#otherInstalled').innerHTML=others.length?others.map(m=>`<span class="chip" style="margin:0 6px 6px 0;display:inline-block">${esc(m.name)}${m.size?' · '+gb(m.size):''}${isOl?` <a style="cursor:pointer;color:var(--bad)" data-del="${esc(m.name)}">✕</a>`:''}</span>`).join(''):'None.';
+  const customDl=isHalo()?Object.entries(HLS?.downloads||{}).filter(([k,d])=>!CATALOG.some(c=>c.tag===k)&&!['done','cancelled'].includes(d.status)):[];
+  $('#otherInstalled').innerHTML=(others.length||customDl.length)?others.map(m=>`<span class="chip" style="margin:0 6px 6px 0;display:inline-block">${esc(m.name)}${m.size?' · '+gb(m.size):''}${canDel?` <a style="cursor:pointer;color:var(--bad)" data-del="${esc(m.name)}" title="Delete">✕</a>`:''}</span>`).join('')+
+    customDl.map(([k])=>{const p=dlState(k);return `<div class="small" style="margin:6px 0">${esc(k)}: ${p.failed?`<span class="err">${esc(p.error)}</span> <a style="cursor:pointer;color:var(--acc2)" data-dismiss="${esc(k)}">Dismiss</a>`:`${pullText(p)} <a style="cursor:pointer;color:var(--acc2)" data-cancel="${esc(k)}">Cancel</a>`}</div>`}).join(''):'None.';
 }
-function pullText(p){return p.total?`${esc(p.status)} · ${gb(p.done)} of ${gb(p.total)} (${p.pct.toFixed(0)}%)`:esc(p.status||'Starting…')}
+// one shape for download progress, whichever engine is in use
+function dlState(tag){
+  if(isHalo()){const d=HLS?.downloads?.[tag];if(!d)return null;
+    const failed=d.status==='failed',paused=d.status==='cancelled',done=d.status==='done';
+    return {status:d.status,done:d.done||0,total:d.total||0,pct:d.total?(d.done/d.total*100):0,error:d.error,rate:d.rate,failed,paused,active:!failed&&!paused&&!done}}
+  const p=pulls[tag];return p?{...p,active:true}:null;
+}
+function pullText(p){return p.total?`${esc(p.status)} · ${gb(p.done)} of ${gb(p.total)} (${p.pct.toFixed(0)}%)${p.rate?' · '+p.rate:''}`:esc(p.status||'Starting…')}
 document.addEventListener('click',e=>{const t=e.target;
   if(t.dataset.pullBtn)pull(t.dataset.pullBtn);
-  else if(t.dataset.cancel){pulls[t.dataset.cancel]?.ctl.abort()}
+  else if(t.dataset.cancel){if(isHalo())hl('cancel',{id:t.dataset.cancel}).then(hlPoll).catch(e=>toast(friendlyErr(e)));else pulls[t.dataset.cancel]?.ctl.abort()}
+  else if(t.dataset.dismiss){hl('dismiss',{id:t.dataset.dismiss}).then(hlPoll).catch(()=>{})}
   else if(t.dataset.del&&t.closest('#library'))delModel(t.dataset.del);
   else if(t.dataset.chat){const m=installed.find(x=>x.name===t.dataset.chat||x.name===t.dataset.chat+':latest');if(m){S.model=m.name;saveS();renderModelSelects();showTab('chat');$('#input').focus()}}
 });
+// "user/repo", "user/repo:Q4_K_M" or a huggingface.co link -> a download for the Halo Lab engine
+function parseHf(t){
+  t=t.trim().replace(/^https?:\/\/(www\.)?huggingface\.co\//i,'').replace(/^hf\.co\//i,'').replace(/\/(tree|blob|resolve)\/.*$/,'');
+  const m=t.match(/^([\w.-]+\/[\w.-]+)(?::([\w.-]+))?$/);if(!m)return null;
+  const repo=m[1],quant=m[2]||'Q4_K_M';
+  return {id:(repo.split('/')[1].replace(/-?GGUF$/i,'')+':'+quant).toLowerCase(),repo,quant,name:repo.split('/')[1]};
+}
 async function pull(tag){
   tag=tag.trim();if(!tag)return;
+  if(isHalo()){
+    const e=CATALOG.find(c=>c.tag===tag);let req;
+    if(e)req={id:e.tag,repo:e.hf.repo,quant:e.hf.quant,vision:!!e.hf.vision,name:e.name};
+    else if(HLS?.downloads?.[tag]?.repo){const d=HLS.downloads[tag];req={id:tag,repo:d.repo,quant:d.quant,vision:!!d.vision,name:d.name}}
+    else req=parseHf(tag);
+    if(!req)return toast('Type a Hugging Face model as user/repo or user/repo:QUANT, for example unsloth/Qwen3-14B-GGUF:Q4_K_M');
+    if(e){const ft=fit(e);if(ft.cls==='bad'&&!confirm(`${e.name} needs about ${ft.need.toFixed(0)} GB, more than this computer can give the GPU. Download it anyway?`))return}
+    try{await hl('pull',req);hlPoll()}catch(err){toast('Download failed: '+friendlyErr(err))}
+    return;
+  }
   if(B().type!=='ollama')return toast('Downloading from here works with Ollama. In LM Studio, use its Discover tab.');
   if(pulls[tag])return;const ctl=new AbortController();pulls[tag]={status:'Starting…',pct:0,ctl};renderLibrary();
   try{const r=await fetch(B().url+'/api/pull',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:tag,name:tag,stream:true}),signal:ctl.signal});
@@ -697,8 +877,10 @@ async function pull(tag){
   try{await refreshModels()}catch(e){renderLibrary()}
 }
 async function delModel(tag){if(!confirm(`Delete ${tag} from this computer? You can download it again later.`))return;
+  if(isHalo()){try{await hl('delete',{id:tag});toast(tag+' deleted');hlPoll()}catch(e){toast('Delete failed: '+friendlyErr(e))}return}
   try{await api('/api/delete',{method:'DELETE',body:JSON.stringify({model:tag,name:tag})});toast(tag+' deleted');await refreshModels()}catch(e){toast('Delete failed: '+friendlyErr(e))}}
 $('#customPull').onclick=()=>{const t=$('#customTag').value.trim();if(t){$('#customTag').value='';toast('Downloading '+t+'…');pull(t)}};
+function customHint(){$('#customTag').placeholder=isHalo()?'e.g. unsloth/Qwen3-14B-GGUF:Q4_K_M':'e.g. qwen3:14b or hf.co/user/repo:Q4_K_M'}
 $('#customTag').onkeydown=e=>{if(e.key==='Enter')$('#customPull').click()};
 
 /* ---------- running ---------- */
@@ -706,6 +888,17 @@ let psTimer=null;
 async function refreshPs(){
   const body=$('#psBody');
   if(!connected){body.innerHTML='<tr><td colspan="6" class="muted">Not connected.</td></tr>';return}
+  if(isHalo()){
+    const s=HLS?.server||{},m=installed.find(x=>x.name===s.model),loaded=s.state==='ready'||s.state==='loading';
+    const used=HW.on?HW.data?.gpu?.dedicatedGB:null;
+    $('#loadedSum').textContent=loaded?`${s.model} · ${s.state==='loading'?'loading…':'ready'}`:'Nothing loaded';
+    $('#loadedBar').style.width=(loaded&&m?Math.min(100,m.size/1e9/S.gpuGB*100):0)+'%';
+    $('#loadedNote').textContent=(HLS?.engine?.version?`Halo Lab engine (llama.cpp ${HLS.engine.version}).`:'')+(s.device?` Running on ${s.device}.`:'')+(typeof used==='number'?` ${used.toFixed(1)} GB of GPU memory in use.`:'')+' One model is loaded at a time; picking another in Chat swaps it automatically.';
+    body.innerHTML=loaded?`<tr><td><b>${esc(s.model)}</b></td><td class="num">${m?gb(m.size):'–'}</td><td class="num">${s.device?'Yes':'–'}</td><td class="num">${s.ctx?(s.ctx/1024).toFixed(0)+'K':'–'}</td><td class="small muted">When you unload it or quit</td><td><button class="small" data-unload="${esc(s.model)}">Unload</button></td></tr>`:
+      s.state==='failed'?`<tr><td colspan="6" class="err">${esc(s.model)}: ${esc(s.error)}</td></tr>`:'<tr><td colspan="6" class="muted">Nothing loaded. A model loads automatically when you chat with it.</td></tr>';
+    $$('[data-unload]').forEach(b=>b.onclick=()=>unload(b.dataset.unload));
+    return;
+  }
   if(B().type!=='ollama'){$('#loadedSum').textContent=B().label;$('#loadedNote').textContent='Live memory details are available with Ollama. LM Studio shows loaded models in its own window.';
     body.innerHTML=installed.map(m=>`<tr><td>${esc(m.name)}</td><td colspan="5" class="muted">available</td></tr>`).join('');return}
   try{const j=await api('/api/ps');const ms=j.models||[];let tot=0,vr=0;
@@ -718,8 +911,9 @@ async function refreshPs(){
     $$('[data-unload]').forEach(b=>b.onclick=()=>unload(b.dataset.unload));
   }catch(e){body.innerHTML=`<tr><td colspan="6" class="err">${esc(friendlyErr(e))}</td></tr>`}
 }
-async function unload(name){try{await api('/api/generate',{method:'POST',body:JSON.stringify({model:name,keep_alive:0})});toast(name+' unloaded')}catch(e){toast(friendlyErr(e))}setTimeout(refreshPs,400)}
-$('#unloadAll').onclick=async()=>{if(B().type!=='ollama')return;try{const j=await api('/api/ps');for(const m of j.models||[])await unload(m.name)}catch(e){toast(friendlyErr(e))}};
+async function unload(name){if(isHalo()){try{await hl('unload');toast(name+' unloaded')}catch(e){toast(friendlyErr(e))}hlPoll();return}
+  try{await api('/api/generate',{method:'POST',body:JSON.stringify({model:name,keep_alive:0})});toast(name+' unloaded')}catch(e){toast(friendlyErr(e))}setTimeout(refreshPs,400)}
+$('#unloadAll').onclick=async()=>{if(isHalo())return unload(HLS?.server?.model||'Model');if(B().type!=='ollama')return;try{const j=await api('/api/ps');for(const m of j.models||[])await unload(m.name)}catch(e){toast(friendlyErr(e))}};
 
 /* ---------- arena ---------- */
 let arenaPicks=store.get('arena',[]),arenaCtl=null;
@@ -741,10 +935,10 @@ $('#arenaRun').onclick=async()=>{
   const sys=systemText(),msgs=(sys?[{role:'system',content:sys}]:[]).concat([{role:'user',content:prompt}]);
   const results=[];
   const runOne=async(m,i)=>{const col=$('#ac'+i),out=col.querySelector('.out'),st=col.querySelector('.st');st.textContent='Loading and thinking…';let raf=0;
-    try{const r=await streamChat({model:m,messages:msgs,signal:arenaCtl.signal,onDelta:(t,th)=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;const s=splitThink(t,th);out.innerHTML=s.text?md(s.text):'<span class="muted">Thinking…</span>';st.textContent='Writing…'})}});
+    try{const r=await streamChat({model:m,messages:msgs,signal:arenaCtl.signal,onStatus:t=>{st.textContent=t},onDelta:(t,th)=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;const s=splitThink(t,th);out.innerHTML=s.text?md(s.text):'<span class="muted">Thinking…</span>';st.textContent='Writing…'})}});
       cancelAnimationFrame(raf);const s=splitThink(r.text,r.think);out.innerHTML=(s.think?`<details class="think"><summary>Thought process</summary><div>${md(s.think)}</div></details>`:'')+md(s.text);st.innerHTML=statsHTML(r.stats);results[i]=r.stats.tps||0}
     catch(e){cancelAnimationFrame(raf);st.innerHTML=`<span class="err">${esc(e.name==='AbortError'?'Stopped':friendlyErr(e))}</span>`}};
-  if($('#arenaMode').value==='par')await Promise.all(picks.map(runOne));else for(let i=0;i<picks.length;i++){if(arenaCtl.signal.aborted)break;await runOne(picks[i],i)}
+  if($('#arenaMode').value==='par'&&!isHalo())await Promise.all(picks.map(runOne));else for(let i=0;i<picks.length;i++){if(arenaCtl.signal.aborted)break;await runOne(picks[i],i)}
   const best=results.reduce((bi,v,i,a)=>v>(a[bi]||0)?i:bi,0);if(results[best])$('#ac'+best).classList.add('win');
   arenaCtl=null;$('#arenaRun').disabled=false;$('#arenaStop').disabled=true;
 };
@@ -776,7 +970,7 @@ $('#benchRun').onclick=async()=>{
   benchCtl=null;$('#benchRun').disabled=false;$('#benchStop').disabled=true;
 };
 
-/* ---------- hardware monitor (talks to halo-monitor.ps1) ---------- */
+/* ---------- hardware monitor (served by halo-server.ps1) ---------- */
 const HW={on:false,data:null,hist:{cpu:[],gpu:[],npu:[]},peak:null,busy:false,timer:null};
 const monUrl=()=>(S.monUrl||'http://localhost:11500').replace(/\/+$/,'');
 async function pollHw(){
@@ -785,6 +979,7 @@ async function pollHw(){
     const r=await fetch(monUrl()+'/stats',{cache:'no-store',signal:ctl.signal});clearTimeout(to);
     const d=await r.json();if(d.error)throw new Error(d.error);
     HW.on=true;HW.data=d;
+    autoBudget();
     const push=(k,v)=>{const a=HW.hist[k];a.push(v==null?null:v);if(a.length>60)a.shift()};
     push('cpu',d.cpu?.util);push('gpu',d.gpu?.util);push('npu',d.npu?.found?d.npu.util:null);
     if(HW.peak){HW.peak.gpu=Math.max(HW.peak.gpu,d.gpu?.util||0);HW.peak.npu=Math.max(HW.peak.npu,d.npu?.util||0);HW.peak.npuFound=!!d.npu?.found;HW.peak.seen=true}
@@ -812,7 +1007,7 @@ function renderHw(){
   setMini('#hmCpu',on?d.cpu?.util:null);setMini('#hmGpu',on?d.gpu?.util:null);setMini('#hmNpu',on&&d.npu?.found?d.npu.util:null);
   $('#hmNpu').classList.toggle('live',!!(on&&d.npu?.util>1));
   if(curTab!=='hardware')return;
-  $('#hwOffline').innerHTML=on?'':`<div class="banner" style="margin:0 0 12px">The hardware monitor isn't running. Open Halo Lab with <b>Start Halo Lab.bat</b> (it starts the monitor for you) and this page fills in within a few seconds. Details are in Setup.</div>`;
+  $('#hwOffline').innerHTML=on?'':`<div class="banner" style="margin:0 0 12px">The hardware meters aren't available. Open Halo Lab with the <b>Halo Lab</b> icon on your desktop and this page fills in within a few seconds.</div>`;
   if(!on){['#npuBig','#gpuBig','#cpuBig'].forEach(i=>$(i).textContent='–');$('#npuState').textContent='Waiting for the hardware monitor…';$('#npuState').className='npustate';$('#npuBadge').textContent='–';return}
   const n=d.npu||{},g=d.gpu||{},c=d.cpu||{},r=d.ram||{};
   // NPU
@@ -839,9 +1034,9 @@ function renderHw(){
   if(r.totalGB){$('#ramBar').style.width=(r.usedGB/r.totalGB*100)+'%';$('#ramTxt').textContent=`${r.usedGB.toFixed(1)} of ${r.totalGB.toFixed(0)} GB in use (what Windows can see)`}
   const vt=g.dedicatedTotalGB;
   if(g.dedicatedGB!=null){$('#vramBar').style.width=Math.min(100,g.dedicatedGB/(vt||S.gpuGB)*100)+'%';
-    $('#vramTxt').innerHTML=`${g.dedicatedGB.toFixed(1)} GB used${vt?` of ${vt.toFixed(0)} GB set aside for the GPU`:` of your ${S.gpuGB} GB budget`}`+(vt&&Math.abs(vt-S.gpuGB)>=4?` · <a style="cursor:pointer;color:var(--acc2)" id="syncBudget">Use ${vt.toFixed(0)} GB as the Library budget</a>`:'');
+    $('#vramTxt').innerHTML=`${g.dedicatedGB.toFixed(1)} GB used${vt?` of ${vt.toFixed(0)} GB set aside for the GPU`:` of your ${S.gpuGB} GB budget`}`+(vt&&!vulkanGB()&&Math.abs(vt-S.gpuGB)>=4?` · <a style="cursor:pointer;color:var(--acc2)" id="syncBudget">Use ${vt.toFixed(0)} GB as the Library budget</a>`:'')+(vulkanGB()?`<br>The AI engine can use up to ${vulkanGB().toFixed(0)} GB (set-aside memory plus shared).`:'');
     const sb=$('#syncBudget');if(sb)sb.onclick=()=>{S.gpuGB=Math.round(vt/4)*4||S.gpuGB;saveS();loadSettingsUI();renderLibrary();renderHw();toast('GPU budget set to '+S.gpuGB+' GB')}}
-  $('#sharedTxt').textContent=g.sharedGB!=null?(g.sharedGB>0.5?`${g.sharedGB.toFixed(1)} GB. The model didn't fully fit in GPU memory, so part of it is using regular RAM (slower).`:'None. Everything fits in GPU memory.'):'–';
+  $('#sharedTxt').textContent=g.sharedGB!=null?(g.sharedGB>0.5?`${g.sharedGB.toFixed(1)} GB. On this chip shared and set-aside memory are the same fast memory, so this doesn't slow anything down.`:'None.'):'–';
   spark('#cvNpu',HW.hist.npu,'#a974ff');spark('#cvGpu',HW.hist.gpu,'#ff8c42');spark('#cvCpu',HW.hist.cpu,'#5aa9ff');
 }
 $('#hwMini').onclick=()=>showTab('hardware');
@@ -851,7 +1046,7 @@ window.addEventListener('resize',()=>{if(curTab==='hardware')renderHw()});
 let curTab='chat';
 function showTab(t){curTab=t;$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));$$('main section').forEach(s=>s.classList.toggle('on',s.id===t));
   clearInterval(psTimer);if(t==='running'){refreshPs();psTimer=setInterval(refreshPs,3000)}
-  if(t==='setup')renderUrlRows();if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware')renderHw()}
+  if(t==='setup'){renderUrlRows();renderSetupBox()}if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware')renderHw()}
 $('#tabs').onclick=e=>{const t=e.target.dataset.tab;if(t)showTab(t)};
 
 /* ---------- start ---------- */

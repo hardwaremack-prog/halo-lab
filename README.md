@@ -8,7 +8,13 @@ so they can run models no ordinary graphics card can hold, such as gpt-oss 120B 
 Llama 4 Scout. Halo Lab gives you one place to download, chat with, compare and benchmark
 those models, and to see what the CPU, GPU and NPU are actually doing.
 
+It works on its own, like The Shelf's AI tab: double-click the desktop icon, press **Set up the engine**
+once, pick a model, and chat. Halo Lab installs and runs its own engine (llama.cpp's Vulkan build,
+which uses the Radeon GPU), downloads models from Hugging Face and loads them for you.
+
 Everything runs on your own computer. Nothing you type leaves it.
+
+![First run](screenshot-setup.png)
 
 ![Chat](screenshot-chat.png)
 
@@ -27,7 +33,8 @@ Everything runs on your own computer. Nothing you type leaves it.
 - **Hardware**: live CPU, GPU and **NPU** use with graphs, which programs are using the GPU and
   NPU, GPU memory in use, and whether a model has spilled into slower shared RAM.
 - **Benchmark**: real reading and writing speeds on your machine, with peak GPU/NPU use and history.
-- **Setup**: works with Ollama (all features), LM Studio, AMD Lemonade Server and llama.cpp server.
+- **Setup**: the models folder (put big models on a roomy drive), engine updates, and optional
+  other engines: Ollama, LM Studio and AMD Lemonade Server.
 
 ![Model Library](screenshot-library.png)
 
@@ -39,23 +46,32 @@ Everything runs on your own computer. Nothing you type leaves it.
 
 ## Getting started (Windows)
 
-1. Install [Ollama](https://ollama.com/download).
-2. Double-click **Start Halo Lab.bat**. It starts the hardware monitor in a minimized window
-   and opens the dashboard in your browser.
-3. If the engine dot at the top right stays red, run **Fix Ollama connection.bat** once.
-   It sets `OLLAMA_ORIGINS` so Ollama accepts requests from the page, then restarts Ollama.
-4. Open **Model Library** and download a model. Qwen3 30B-A3B or gpt-oss 20B are good first picks.
-5. For the big models, give the GPU more memory in AMD Software (Variable Graphics Memory)
-   or the BIOS. 64 GB is a good start on a 96 GB machine.
+1. The first time, double-click **Start Halo Lab.bat** (it also puts a **Halo Lab** icon on your
+   Desktop; use that from then on). Halo Lab starts in the background, shows an orange ring near
+   the clock, and opens in your browser.
+2. Press **Set up the engine**. It's a one-time download of about 35 MB.
+3. Pick your first model. Qwen3 30B-A3B is the recommended start: smart and very fast on this chip.
+4. Chat. The model loads into GPU memory by itself the first time you use it.
+
+The engine uses the GPU's set-aside memory plus shared memory, so a 96 GB EVO-X2 can give it
+about 76–80 GB with default settings. That's enough for every model in the Library, including
+gpt-oss 120B. Halo Lab reads the real amount from your PC.
+
+To quit, right-click the orange ring and choose **Quit Halo Lab**.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
-| `Halo Lab.html` | The dashboard. A single page, no install. `index.html` is the same file. |
-| `halo-monitor.ps1` | Hardware monitor. Reads the same Windows performance counters Task Manager uses and serves them to the page at `http://localhost:11500/stats`. It only listens on this computer. |
-| `Start Halo Lab.bat` | Starts the monitor and opens the dashboard. |
-| `Fix Ollama connection.bat` | One-time fix if the page can't reach Ollama. |
+| `Halo Lab.html` | The dashboard. `index.html` is the same file. |
+| `halo-server.ps1` | The background program. It serves the dashboard at `http://localhost:11500`, reads the CPU/GPU/NPU counters Task Manager uses, installs the engine, downloads models and starts or stops the engine. It only listens on this computer and needs nothing installed (it uses the PowerShell built into Windows). |
+| `halo-start.ps1` | The launcher the desktop icon runs. It keeps the icon pointing at this folder and, if Halo Lab can't start, shows a message and writes `startup.log`. |
+| `Start Halo Lab.bat` | Starts Halo Lab, the same as the desktop icon. |
+| `Fix Ollama connection.bat` | Only needed if you choose Ollama as the engine. |
+
+Halo Lab keeps the engine and models in `%LOCALAPPDATA%\HaloLab` unless you choose another models
+folder in Setup. The engine runs at `http://127.0.0.1:11600`, so other programs on this computer
+can use the loaded model through its OpenAI-compatible API.
 
 ## About the NPU
 
@@ -67,7 +83,9 @@ shows an NPU graph, Halo Lab will too.
 
 ## Notes
 
-- Screenshots use demo data, not real measurements.
-- Model sizes and speeds in the Library are estimates. Use the Benchmark tab for real numbers.
+- Screenshots use demo data. On a real EVO-X2 (96 GB), Llama 3.2 3B ran at about 90 tok/s writing and
+  1,300 tok/s reading with the GPU at 96%, and the engine could use about 80 GB of GPU memory.
+- Download sizes in the Library are the real Hugging Face file sizes. Speeds are estimates; use the
+  Benchmark tab for real numbers.
 - The model list reflects what was current in mid-2026. Newer models can be downloaded by name.
 - Chats and settings are saved in your browser only.

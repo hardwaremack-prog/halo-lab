@@ -1,5 +1,4 @@
 @echo off
-rem Starts the hardware monitor (CPU / GPU / NPU meters) in a minimized window, then opens Halo Lab.
-start "Halo Lab hardware monitor" /min powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0halo-monitor.ps1"
-timeout /t 2 >nul
-start "" "%~dp0Halo Lab.html"
+rem Starts Halo Lab in the background (orange ring icon near the clock) and opens it in your browser.
+rem The Halo Lab desktop icon does the same thing.
+start "" powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0halo-start.ps1"
