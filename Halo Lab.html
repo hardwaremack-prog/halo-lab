@@ -170,6 +170,11 @@ td.num{font-family:var(--mono)}
 .hm i{display:block;width:34px;height:6px;border-radius:6px;background:var(--panel3);overflow:hidden;position:relative}
 .hm i b{position:absolute;inset:0 auto 0 0;border-radius:6px;transition:width .4s}
 .hm.npu.live{color:#c9a7ff}
+.clearbtn{font-size:12px;padding:4px 10px;border-radius:999px}
+.lprog{margin:4px 0 8px;max-width:520px}.lprog .meter{height:8px;margin-top:4px}
+.apps{margin-top:8px;font-size:12px}.apps .ap{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.apps .ap span.n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.apps .ap b{font-family:var(--mono);font-weight:500}
+.apps button{padding:2px 8px;font-size:11px}
 .hwgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
 .hwcard h3{margin:0;font-size:14px;color:var(--mute);font-weight:500;display:flex;justify-content:space-between;align-items:center}
 .big{font-size:38px;font-weight:700;font-family:var(--mono);line-height:1.1;margin:6px 0 2px}
@@ -180,6 +185,7 @@ td.num{font-family:var(--mono)}
 @media (max-width:1050px){#chat.on{grid-template-columns:1fr}.side,.right{display:none}.side.show,.right.show{display:flex;position:fixed;top:0;bottom:0;z-index:20;width:290px}.side.show{left:0}.right.show{right:0;display:block}}
 @media (max-width:1500px){.chips .chip:nth-child(n+3){display:none}}
 @media (max-width:1250px){.chips{display:none}}
+@media (max-width:1000px){#hmNpu,#hmVram{display:none}}
 @media (max-width:700px){.chips{display:none}.hwmini{display:none}.pad{padding:14px 16px}#msgs,.composer{padding-left:16px;padding-right:16px}}
 </style>
 </head>
@@ -198,7 +204,10 @@ td.num{font-family:var(--mono)}
     <span class="hm" id="hmCpu">CPU <i><b style="background:var(--blue)"></b></i><span>–</span></span>
     <span class="hm" id="hmGpu">GPU <i><b style="background:var(--acc2)"></b></i><span>–</span></span>
     <span class="hm npu" id="hmNpu">NPU <i><b style="background:#a974ff"></b></i><span>–</span></span>
+    <span class="hm" id="hmMem" title="System memory (RAM) in use">MEM <i><b style="background:var(--ok)"></b></i><span>–</span></span>
+    <span class="hm" id="hmVram" title="GPU memory in use, out of what the AI engine can use">VRAM <i><b style="background:#ffd27a"></b></i><span>–</span></span>
   </div>
+  <button class="ghost small clearbtn" id="clearMem" title="Unload the AI model and free up RAM">Clear memory</button>
   <div class="conn">
     <span class="dot" id="connDot"></span><span id="connText">Connecting…</span>
     <select id="backendSel" title="Which AI engine to talk to"></select>
@@ -368,6 +377,8 @@ td.num{font-family:var(--mono)}
       <label style="margin-top:6px">System RAM</label><div class="meter" style="height:10px"><i id="ramBar" style="width:0;background:var(--blue)"></i></div><div class="small muted" id="ramTxt">–</div>
       <label>GPU memory (dedicated)</label><div class="meter" style="height:10px"><i id="vramBar" style="width:0;background:var(--acc2)"></i></div><div class="small muted" id="vramTxt">–</div>
       <label>GPU using shared memory</label><div class="small muted" id="sharedTxt">–</div>
+      <label>Apps using GPU memory</label><div class="apps" id="gpuApps"><span class="muted">–</span></div>
+      <button class="primary" id="clearMem2" style="margin-top:10px">Clear memory</button>
     </div>
   </div>
   <div class="card" style="margin-top:12px">
@@ -583,7 +594,9 @@ async function ensureLoaded(model,ctx,onStatus,signal){
     if(s.state==='ready')return (performance.now()-t0)/1000;
     if(s.state==='failed')throw new Error(s.error+(s.detail?' ('+s.detail.slice(0,300)+')':''));
     if(s.state==='stopped')throw new Error('The model was unloaded.');
-    onStatus&&onStatus(`Loading ${model} into GPU memory… ${secs}s${secs>20?' (big models take a minute or two the first time)':''}`);
+    const pct=s.progress||0;
+    const txt=!pct?`Getting ${model} ready: reserving memory… ${secs}s`:`Loading ${model} into memory… ${s.readGB} of ${s.totalGB} GB · ${secs}s${pct>=99?' (almost done: setting up on the GPU)':''}`;
+    onStatus&&onStatus({text:txt,pct,warn:s.warn});
   }
 }
 
@@ -751,7 +764,8 @@ function fillMsg(d,m){
   if(m.role==='assistant'){h+=`<div class="who">${esc(m.model||'')}</div>`;
     if(think)h+=`<details class="think"${m.streaming&&!text?' open':''}><summary>${m.streaming&&!text?'Thinking…':'Thought process'}</summary><div>${md(think)}</div></details>`}
   if(m.images?.length)h+=`<div class="imgs">${m.images.map(u=>`<img src="${u}" alt="">`).join('')}</div>`;
-  if(m.loading&&m.streaming&&!m.content)h+=`<div class="small muted loadline">${esc(m.loading)}</div>`;
+  if(m.loading&&m.streaming&&!m.content){const L=typeof m.loading==='string'?{text:m.loading}:m.loading;
+    h+=`<div class="lprog"><div class="small muted">${esc(L.text)}</div>${L.pct!=null?`<div class="meter"><i style="width:${L.pct}%;background:linear-gradient(90deg,var(--acc),var(--acc2))"></i></div>`:''}${L.warn?`<div class="small" style="color:var(--warn);margin-top:4px">${esc(L.warn)}</div>`:''}</div>`}
   h+=`<div class="body">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(text)}${m.streaming?'<span class="caret"></span>':''}</div>`;
   h+=statsHTML(m.stats);if(m.error)h+=`<div class="err">${esc(m.error)}</div>`;
   d.innerHTML=h;
@@ -953,9 +967,9 @@ async function refreshPs(){
   if(isHalo()){
     const s=HLS?.server||{},m=installed.find(x=>x.name===s.model),loaded=s.state==='ready'||s.state==='loading';
     const used=HW.on?HW.data?.gpu?.dedicatedGB:null;
-    $('#loadedSum').textContent=loaded?`${s.model} · ${s.state==='loading'?'loading…':'ready'}`:'Nothing loaded';
-    $('#loadedBar').style.width=(loaded&&m?Math.min(100,m.size/1e9/S.gpuGB*100):0)+'%';
-    $('#loadedNote').textContent=(HLS?.engine?.version?`Halo Lab engine (llama.cpp ${HLS.engine.version}).`:'')+(s.device?` Running on ${s.device}.`:'')+(typeof used==='number'?` ${used.toFixed(1)} GB of GPU memory in use.`:'')+' One model is loaded at a time; picking another in Chat swaps it automatically.';
+    $('#loadedSum').textContent=loaded?`${s.model} · ${s.state==='loading'?`loading ${s.progress||0}% (${s.readGB||0} of ${s.totalGB||'?'} GB)`:'ready'}`:'Nothing loaded';
+    $('#loadedBar').style.width=(s.state==='loading'?(s.progress||0):(loaded&&m?Math.min(100,m.size/1e9/S.gpuGB*100):0))+'%';
+    $('#loadedNote').textContent=(HLS?.engine?.version?`Halo Lab engine (llama.cpp ${HLS.engine.version}).`:'')+(s.device?` Running on ${s.device}.`:'')+(typeof used==='number'?` ${used.toFixed(1)} GB of GPU memory in use.`:'')+' One model is loaded at a time; picking another in Chat swaps it automatically.'+(s.warn?' '+s.warn:'');
     body.innerHTML=loaded?`<tr><td><b>${esc(s.model)}</b></td><td class="num">${m?gb(m.size):'–'}</td><td class="num">${s.device?'Yes':'–'}</td><td class="num">${s.ctx?(s.ctx/1024).toFixed(0)+'K':'–'}</td><td class="small muted">When you unload it or quit</td><td><button class="small" data-unload="${esc(s.model)}">Unload</button></td></tr>`:
       s.state==='failed'?`<tr><td colspan="6" class="err">${esc(s.model)}: ${esc(s.error)}</td></tr>`:'<tr><td colspan="6" class="muted">Nothing loaded. A model loads automatically when you chat with it.</td></tr>';
     $$('[data-unload]').forEach(b=>b.onclick=()=>unload(b.dataset.unload));
@@ -997,7 +1011,7 @@ $('#arenaRun').onclick=async()=>{
   const sys=systemText(),msgs=(sys?[{role:'system',content:sys}]:[]).concat([{role:'user',content:prompt}]);
   const results=[];
   const runOne=async(m,i)=>{const col=$('#ac'+i),out=col.querySelector('.out'),st=col.querySelector('.st');st.textContent='Loading and thinking…';let raf=0;
-    try{const r=await streamChat({model:m,messages:msgs,signal:arenaCtl.signal,onStatus:t=>{st.textContent=t},onDelta:(t,th)=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;const s=splitThink(t,th);out.innerHTML=s.text?md(s.text):'<span class="muted">Thinking…</span>';st.textContent='Writing…'})}});
+    try{const r=await streamChat({model:m,messages:msgs,signal:arenaCtl.signal,onStatus:t=>{st.textContent=(t.text||t)+(t.pct!=null?` (${t.pct}%)`:'')},onDelta:(t,th)=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;const s=splitThink(t,th);out.innerHTML=s.text?md(s.text):'<span class="muted">Thinking…</span>';st.textContent='Writing…'})}});
       cancelAnimationFrame(raf);const s=splitThink(r.text,r.think);out.innerHTML=(s.think?`<details class="think"><summary>Thought process</summary><div>${md(s.think)}</div></details>`:'')+md(s.text);st.innerHTML=statsHTML(r.stats);results[i]=r.stats.tps||0}
     catch(e){cancelAnimationFrame(raf);st.innerHTML=`<span class="err">${esc(e.name==='AbortError'?'Stopped':friendlyErr(e))}</span>`}};
   if($('#arenaMode').value==='par'&&!isHalo())await Promise.all(picks.map(runOne));else for(let i=0;i<picks.length;i++){if(arenaCtl.signal.aborted)break;await runOne(picks[i],i)}
@@ -1067,6 +1081,11 @@ function renderHw(){
   $('#hwMini').classList.toggle('off',!on);
   $('#hwMini').title=on?'Live hardware use. Click for details.':'Hardware monitor is not running. Click for how to start it.';
   setMini('#hmCpu',on?d.cpu?.util:null);setMini('#hmGpu',on?d.gpu?.util:null);setMini('#hmNpu',on&&d.npu?.found?d.npu.util:null);
+  const memPct=on&&d.ram?.totalGB?d.ram.usedGB/d.ram.totalGB*100:null;setMini('#hmMem',memPct);
+  if(on&&d.ram?.totalGB)$('#hmMem').title=`System memory: ${d.ram.usedGB.toFixed(1)} of ${d.ram.totalGB.toFixed(0)} GB in use`;
+  const vUsed=on&&d.gpu?.dedicatedGB!=null?(d.gpu.dedicatedGB+(d.gpu.sharedGB||0)):null,vTot=vulkanGB()||d.gpu?.dedicatedTotalGB||null;
+  setMini('#hmVram',vUsed!=null&&vTot?vUsed/vTot*100:null);
+  if(vUsed!=null)$('#hmVram').title=`GPU memory: ${vUsed.toFixed(1)} GB in use${vTot?` of about ${vTot.toFixed(0)} GB the AI engine can use`:''}`;
   $('#hmNpu').classList.toggle('live',!!(on&&d.npu?.util>1));
   if(curTab!=='hardware')return;
   $('#hwOffline').innerHTML=on?'':`<div class="banner" style="margin:0 0 12px">The hardware meters aren't available. Open Halo Lab with the <b>Halo Lab</b> icon on your desktop and this page fills in within a few seconds.</div>`;
@@ -1099,16 +1118,40 @@ function renderHw(){
     $('#vramTxt').innerHTML=`${g.dedicatedGB.toFixed(1)} GB used${vt?` of ${vt.toFixed(0)} GB set aside for the GPU`:` of your ${S.gpuGB} GB budget`}`+(vt&&!vulkanGB()&&Math.abs(vt-S.gpuGB)>=4?` · <a style="cursor:pointer;color:var(--acc2)" id="syncBudget">Use ${vt.toFixed(0)} GB as the Library budget</a>`:'')+(vulkanGB()?`<br>The AI engine can use up to ${vulkanGB().toFixed(0)} GB (set-aside memory plus shared).`:'');
     const sb=$('#syncBudget');if(sb)sb.onclick=()=>{S.gpuGB=Math.round(vt/4)*4||S.gpuGB;saveS();loadSettingsUI();renderLibrary();renderHw();toast('GPU budget set to '+S.gpuGB+' GB')}}
   $('#sharedTxt').textContent=g.sharedGB!=null?(g.sharedGB>0.5?`${g.sharedGB.toFixed(1)} GB. On this chip shared and set-aside memory are the same fast memory, so this doesn't slow anything down.`:'None.'):'–';
+  if(Date.now()-appsT>5000){appsT=Date.now();refreshApps()}
   spark('#cvNpu',HW.hist.npu,'#a974ff');spark('#cvGpu',HW.hist.gpu,'#ff8c42');spark('#cvCpu',HW.hist.cpu,'#5aa9ff');
 }
 $('#hwMini').onclick=()=>showTab('hardware');
 window.addEventListener('resize',()=>{if(curTab==='hardware')renderHw()});
 
+/* ---------- clear memory & apps using GPU memory ---------- */
+let appsT=0;
+function renderApps(list){
+  const el=$('#gpuApps');if(!el)return;
+  if(!list){el.innerHTML='<span class="muted">Only available with Halo Lab running.</span>';return}
+  el.innerHTML=list.length?list.map(a=>`<div class="ap"><span class="n" title="${esc(a.title||a.name)}">${esc(a.ours?'Halo Lab engine':a.name)}${a.name==='node'&&!a.ours?' <span class="muted">· a Node.js app such as The Shelf\'s AI tab</span>':''}</span><b>${a.gb} GB</b>${a.closable?`<button data-close="${a.pid}" data-name="${esc(a.name)}">Close</button>`:''}</div>`).join(''):'<span class="muted">No apps are holding much GPU memory.</span>';
+  el.querySelectorAll('[data-close]').forEach(b=>b.onclick=async()=>{
+    if(!confirm(`Close ${b.dataset.name}? Anything it's doing will stop.`))return;
+    try{const r=await hl('closeapp',{pid:+b.dataset.close});toast(r.name+' closed');setTimeout(refreshApps,1500)}catch(e){toast(e.message)}});
+}
+async function refreshApps(){if(!isHalo()&&!HL&&location.port!=='11500')return;try{const r=await fetch(HL+'/api/hl/memory').then(r=>r.json());renderApps(r.gpuProcs||[])}catch(e){renderApps(null)}}
+async function clearMemory(){
+  const model=HLS?.server?.model;
+  if(model&&(HLS.server.state==='ready'||HLS.server.state==='loading')&&!confirm(`Clear memory? This unloads ${model} (it loads again next time you chat) and asks other programs to give back RAM they aren't using.`))return;
+  for(const id of ['#clearMem','#clearMem2']){const b=$(id);if(b){b.disabled=true;b.textContent='Clearing…'}}
+  try{const r=await fetch(HL+'/api/hl/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json());
+    toast(`${r.unloaded?`Unloaded ${r.unloaded}. `:''}Freed ${r.freedGB} GB of RAM.`+((r.gpuProcs||[]).some(a=>!a.ours&&a.gb>=2)?' Other apps are still holding GPU memory: see the Hardware tab.':''));
+    renderApps(r.gpuProcs||[]);hlPoll();
+  }catch(e){toast('Clear memory needs Halo Lab running. '+e.message)}
+  for(const id of ['#clearMem','#clearMem2']){const b=$(id);if(b){b.disabled=false;b.textContent='Clear memory'}}
+}
+$('#clearMem').onclick=clearMemory;$('#clearMem2').onclick=clearMemory;
+
 /* ---------- tabs ---------- */
 let curTab='chat';
 function showTab(t){curTab=t;$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));$$('main section').forEach(s=>s.classList.toggle('on',s.id===t));
   clearInterval(psTimer);if(t==='running'){refreshPs();psTimer=setInterval(refreshPs,3000)}
-  if(t==='setup'){renderUrlRows();renderSetupBox()}if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware')renderHw()}
+  if(t==='setup'){renderUrlRows();renderSetupBox()}if(t==='bench'){renderBenchModels();renderBench()}if(t==='hardware'){renderHw();refreshApps()}}
 $('#tabs').onclick=e=>{const t=e.target.dataset.tab;if(t)showTab(t)};
 
 /* ---------- start ---------- */

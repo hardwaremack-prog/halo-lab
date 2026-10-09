@@ -306,10 +306,10 @@ $ServerCode = {
   function Stop-Model {
     $s = $sync.srv
     if ($s.pid) { try { Stop-Process -Id $s.pid -Force -ErrorAction Stop } catch {} }
-    $s.pid = $null; $s.state = 'stopped'; $s.model = $null; $s.error = $null; $s.detail = $null; $s.device = $null
+    $s.pid = $null; $s.state = 'stopped'; $s.model = $null; $s.error = $null; $s.detail = $null; $s.device = $null; $s.progress = $null; $s.warn = $null
   }
 
-  function Start-Model([string]$id, [int]$ctx) {
+  function Start-Model([string]$id, [int]$ctx, [int]$fitMiB = 3072, [bool]$split = $false) {
     Stop-Model
     $s = $sync.srv
     $eng = Get-Engine
@@ -320,8 +320,14 @@ $ServerCode = {
     $q = [char]34
     $log = Join-Path (Join-Path $sync.data 'logs') 'engine.log'
     if (Test-Path $log) { Remove-Item $log -Force -ErrorAction SilentlyContinue }
-    $argList = @('-m', ($q + (Join-Path $m.dir $m.main) + $q), '-c', $ctx, '-ngl', 'all', '--host', '127.0.0.1', '--port', $EnginePort, '--alias', ($q + $id + $q), '--no-webui', '--log-colors', 'off', '--log-file', ($q + $log + $q))
+    # -ngl is left unset on purpose: llama.cpp's --fit (on by default) then puts as many layers on the GPU as
+    # really fit, keeping --fit-target MiB spare, instead of failing when another app holds GPU memory.
+    # --load-mode none reads the file normally (no memory-mapping), which lets Halo Lab show load progress.
+    $argList = @('-m', ($q + (Join-Path $m.dir $m.main) + $q), '-c', $ctx, '--fit-target', $fitMiB, '--load-mode', 'none', '--host', '127.0.0.1', '--port', $EnginePort, '--alias', ($q + $id + $q), '--no-webui', '--log-colors', 'off', '--log-file', ($q + $log + $q))
     if ($m.mmproj) { $argList += @('--mmproj', ($q + (Join-Path $m.dir $m.mmproj) + $q)) }
+    # when part of the model has to stay on the CPU, keep that part in ordinary RAM rather than "pinned" memory,
+    # which on this chip comes out of the same limited shared-GPU-memory pool
+    if ($split) { $argList += @('--no-host') }
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = $eng.exe
     $psi.Arguments = ($argList -join ' ')
@@ -330,6 +336,7 @@ $ServerCode = {
     $psi.CreateNoWindow = $true
     $p = [Diagnostics.Process]::Start($psi)
     $s.pid = $p.Id; $s.model = $id; $s.ctx = $ctx; $s.state = 'loading'; $s.error = $null; $s.detail = $null; $s.since = (Get-Date).ToString('o'); $s.device = $null
+    $s.totalBytes = [double]$m.bytes; $s.readBytes = 0.0; $s.progress = 0; $s.gpuGB = $null
   }
 
   function Update-Server {
@@ -348,11 +355,19 @@ $ServerCode = {
       return
     }
     if ($s.state -eq 'loading') {
+      # progress = how much of the model file the engine has read so far
+      try {
+        $wp = Get-CimInstance Win32_Process -Filter "ProcessId=$($s.pid)"
+        if ($wp -and $s.totalBytes -gt 0) {
+          $s.readBytes = [double]$wp.ReadTransferCount
+          $s.progress = [math]::Min(99, [math]::Round($s.readBytes / $s.totalBytes * 100))
+        }
+      } catch {}
       try {
         $r = [Net.HttpWebRequest]::Create("http://127.0.0.1:$EnginePort/health"); $r.Timeout = 600
         $resp = $r.GetResponse(); $code = [int]$resp.StatusCode; $resp.Close()
         if ($code -eq 200) {
-          $s.state = 'ready'
+          $s.state = 'ready'; $s.progress = 100
           $tail = Get-LogTail 400
           $dev = $tail | Where-Object { $_ -match 'ggml_vulkan: \d+ = ([^|(]+)' } | Select-Object -First 1
           if ($dev -and ($dev -match 'ggml_vulkan: \d+ = ([^|(]+)')) { $s.device = $Matches[1].Trim() }
@@ -361,11 +376,55 @@ $ServerCode = {
     }
   }
 
+  # GPU memory held by each program (same counters as Task Manager's "Dedicated/Shared GPU memory" columns)
+  function Get-GpuProcs {
+    $by = @{}
+    foreach ($m in (Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory)) {
+      if ($m.Name -notmatch 'pid_(\d+)_luid_(0x[0-9a-fA-F]+_0x[0-9a-fA-F]+)') { continue }
+      if ($sync.gpuLuid -and $Matches[2].ToLower() -ne $sync.gpuLuid) { continue }
+      $pidv = [int]$Matches[1]
+      $tot = [double]$m.DedicatedUsage + [double]$m.SharedUsage
+      if ($tot -lt 50MB) { continue }
+      if ($by.ContainsKey($pidv)) { $by[$pidv] += $tot } else { $by[$pidv] = $tot }
+    }
+    $out = @()
+    foreach ($kv in ($by.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 8)) {
+      $pr = Get-Process -Id $kv.Key -ErrorAction SilentlyContinue
+      $name = "pid $($kv.Key)"; $title = ''
+      if ($pr) { $name = $pr.ProcessName; if ($name -eq 'node') { $title = 'Node.js app (The Shelf AI and similar)' } }
+      $ours = ($kv.Key -eq $sync.srv.pid)
+      $out += [ordered]@{ pid = [int]$kv.Key; name = $name; title = $title; gb = [math]::Round($kv.Value / 1GB, 1); ours = $ours; closable = ((-not $ours) -and ($name -match '^(?i)(ollama|ollama app|lm studio|lms|llama-server|llama-cli|lemonade.*|flm|koboldcpp|jan|gpt4all|text-generation.*)$')) }
+    }
+    return $out
+  }
+
+  # How much GPU memory a model can really use right now, worked out like Task Manager does:
+  # (memory set aside for the GPU - what's in use there) + (shared GPU memory, which Windows caps at half the RAM, - what's in use there).
+  # The graphics driver's own "free" number ignores the shared-memory cap and other apps, so it is too optimistic on this chip.
+  function Get-GpuBudget {
+    $r = [ordered]@{ dedTotal = $null; dedUsed = 0.0; shUsed = 0.0; ramTotal = 0.0; ramFree = 0.0; availGB = $null; vkFreeGB = $null }
+    try { if (-not $sync.hw) { [void](Get-Stats) } } catch {}
+    try {
+      if ($sync.hw) { $r.dedTotal = $sync.hw.gpuTotal }
+      foreach ($m in (Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory)) {
+        if ($m.Name -match 'luid_(0x[0-9a-fA-F]+_0x[0-9a-fA-F]+)' -and $Matches[1].ToLower() -eq $sync.gpuLuid) { $r.dedUsed += [double]$m.DedicatedUsage / 1GB; $r.shUsed += [double]$m.SharedUsage / 1GB }
+      }
+      $os = Get-CimInstance Win32_OperatingSystem
+      $r.ramTotal = [double]$os.TotalVisibleMemorySize * 1KB / 1GB; $r.ramFree = [double]$os.FreePhysicalMemory * 1KB / 1GB
+      if ($r.dedTotal) {
+        $shAvail = [math]::Min($r.ramTotal / 2 - $r.shUsed, $r.ramFree - 2)
+        $r.availGB = [math]::Round([math]::Max(0, $r.dedTotal - $r.dedUsed) + [math]::Max(0, $shAvail), 1)
+      }
+    } catch {}
+    try { $g = @(Get-Devices -Fresh | Where-Object { $_.freeGB -ne $null }) | Select-Object -First 1; if ($g) { $r.vkFreeGB = $g.freeGB } } catch {}
+    return $r
+  }
+
   # asks the engine which GPUs it can use (llama-server --list-devices); cached until the engine changes
-  function Get-Devices {
+  function Get-Devices([switch]$Fresh) {
     $eng = Get-Engine
     if (-not $eng) { return $null }
-    if ($sync.devKey -eq $eng.exe -and $null -ne $sync.devices) { return $sync.devices }
+    if (-not $Fresh -and $sync.devKey -eq $eng.exe -and $null -ne $sync.devices) { return $sync.devices }
     $list = @()
     try {
       $psi = New-Object Diagnostics.ProcessStartInfo
@@ -380,7 +439,11 @@ $ServerCode = {
       $all = $out + "`n" + $errTask.Result
       $sync.devText = $all
       foreach ($line in ($all -split "`r?`n")) {
-        if ($line -match '^\s+([A-Za-z]+\d+):\s+(.+)$') { $list += [ordered]@{ id = $Matches[1]; name = $Matches[2].Trim() } }
+        if ($line -match '^\s+([A-Za-z]+\d+):\s+(.+)$') {
+          $d = [ordered]@{ id = $Matches[1]; name = $Matches[2].Trim(); totalGB = $null; freeGB = $null }
+          if ($d.name -match '\((\d+) MiB, (\d+) MiB free\)') { $d.totalGB = [math]::Round([double]$Matches[1] / 1024, 1); $d.freeGB = [math]::Round([double]$Matches[2] / 1024, 1) }
+          $list += $d
+        }
       }
     } catch { $sync.devText = $_.Exception.Message }
     $sync.devices = $list; $sync.devKey = $eng.exe
@@ -407,7 +470,7 @@ $ServerCode = {
     return [ordered]@{
       ok = $true; app = 'halo-lab'; version = '2.0'
       engine = $engine
-      server = [ordered]@{ state = $s.state; model = $s.model; ctx = $s.ctx; port = $EnginePort; error = $s.error; detail = $s.detail; device = $s.device; since = $s.since }
+      server = [ordered]@{ state = $s.state; model = $s.model; ctx = $s.ctx; port = $EnginePort; error = $s.error; detail = $s.detail; device = $s.device; since = $s.since; progress = $s.progress; readGB = [math]::Round([double]$s.readBytes / 1GB, 1); totalGB = [math]::Round([double]$s.totalBytes / 1GB, 1); warn = $s.warn }
       models = $models; downloads = $dls
       disk = [ordered]@{ modelsDir = $mdir; freeGB = $free }
     }
@@ -469,6 +532,7 @@ $ServerCode = {
         $o += [ordered]@{ pid = $pidv; name = $hw.names[$pidv]; util = [math]::Round([math]::Min(100, $kv.Value), 1) }
       }
       return ,$o }
+    if ($gpuLuid) { $sync.gpuLuid = $gpuLuid }
     $gA = $null; if ($gpuLuid) { $gA = $ad[$gpuLuid] }
     $nA = $null; if ($npuLuid) { $nA = $ad[$npuLuid] }
     $engTypes = @{}
@@ -607,8 +671,60 @@ $ServerCode = {
           $ctxN = 8192; if ($b.ctx) { $ctxN = [int]$b.ctx }
           $s = $sync.srv
           if ($s.model -eq $b.id -and $s.ctx -eq $ctxN -and ($s.state -eq 'ready' -or $s.state -eq 'loading')) { Send-Json $res @{ ok = $true }; break }
-          try { Start-Model ([string]$b.id) $ctxN; Send-Json $res @{ ok = $true } }
+          # check free GPU memory first, so a model that can't fit says so now instead of after a minute of loading
+          $warn = $null; $fitMiB = 3072
+          try {
+            $m = Get-Models | Where-Object { $_.id -eq [string]$b.id } | Select-Object -First 1
+            if ($m -and $s.state -ne 'ready' -and $s.state -ne 'loading') {
+              Stop-Model
+              Start-Sleep -Milliseconds 300
+              $bud = Get-GpuBudget
+              if ($bud.availGB -ne $null) {
+                $need = [double]$m.bytes / 1GB + 1.5 + 0.08 * ($ctxN / 1024)
+                $hogs = @(Get-GpuProcs | Where-Object { -not $_.ours -and $_.gb -ge 1 } | Select-Object -First 3 | ForEach-Object { '{0} ({1} GB)' -f $_.name, $_.gb }) -join ', '
+                $dedFree = [math]::Max(0, $bud.dedTotal - $bud.dedUsed)
+                if ($need -gt $dedFree + $bud.ramFree - 3) {
+                  $msg = ('{0} needs about {1:N0} GB, but only about {2:N0} GB of memory is free for it.' -f $b.id, $need, ($dedFree + $bud.ramFree - 3))
+                  if ($hogs) { $msg += " Using GPU memory now: $hogs." }
+                  $msg += ' Press Clear memory, close other AI apps, or pick a smaller model.'
+                  Send-Json $res @{ error = $msg } 400; break
+                }
+                if ($need -gt $bud.availGB) {
+                  $warn = ('About {0:N0} GB of GPU memory is free, less than the {1:N0} GB {2} needs, so part of it will run on the CPU (slower).' -f $bud.availGB, $need, $b.id)
+                  if ($hogs) { $warn += " Using GPU memory now: $hogs. Close them for full speed." }
+                }
+                # llama.cpp fits the model into the driver's free number minus this margin; make that equal the real free memory
+                if ($bud.vkFreeGB) { $fitMiB = [int][math]::Max(3072, ($bud.vkFreeGB - $bud.availGB) * 1024 + 2048) }
+              }
+            }
+          } catch {}
+          try { Start-Model ([string]$b.id) $ctxN $fitMiB ([bool]$warn); $sync.srv.warn = $warn; $sync.srv.fitMiB = $fitMiB; Send-Json $res @{ ok = $true; warn = $warn } }
           catch { Send-Json $res @{ error = $_.Exception.Message } 400 }
+          break }
+        '^/api/hl/memory$' {
+          $os = Get-CimInstance Win32_OperatingSystem
+          $tot = [double]$os.TotalVisibleMemorySize * 1KB / 1GB; $fr = [double]$os.FreePhysicalMemory * 1KB / 1GB
+          Send-Json $res ([ordered]@{ ramTotalGB = [math]::Round($tot, 1); ramUsedGB = [math]::Round($tot - $fr, 1); gpuProcs = @(Get-GpuProcs) }); break }
+        '^/api/hl/clear$' {
+          # 1) unload Halo Lab's model, 2) ask every program we're allowed to touch to give back RAM it isn't using
+          $os = Get-CimInstance Win32_OperatingSystem; $before = [double]$os.FreePhysicalMemory * 1KB
+          $unloaded = $sync.srv.model
+          Stop-Model
+          Start-Sleep -Milliseconds 800
+          $trimmed = 0
+          try {
+            if (-not ('HL.Psapi' -as [type])) { Add-Type -Namespace HL -Name Psapi -MemberDefinition '[DllImport("psapi.dll")] public static extern bool EmptyWorkingSet(System.IntPtr hProcess);' }
+            foreach ($pr in (Get-Process)) { try { if ([HL.Psapi]::EmptyWorkingSet($pr.Handle)) { $trimmed++ } } catch {} }
+          } catch {}
+          Start-Sleep -Milliseconds 500
+          $os = Get-CimInstance Win32_OperatingSystem; $after = [double]$os.FreePhysicalMemory * 1KB
+          Send-Json $res ([ordered]@{ ok = $true; unloaded = $unloaded; freedGB = [math]::Round([math]::Max(0, $after - $before) / 1GB, 1); trimmed = $trimmed; gpuProcs = @(Get-GpuProcs) }); break }
+        '^/api/hl/closeapp$' {
+          $b = Read-Body $req
+          $hit = @(Get-GpuProcs | Where-Object { $_.pid -eq [int]$b.pid -and $_.closable })
+          if (-not $hit.Count) { Send-Json $res @{ error = 'Halo Lab only closes other AI apps (Ollama, LM Studio, llama.cpp and similar).' } 400; break }
+          try { Stop-Process -Id ([int]$b.pid) -Force -ErrorAction Stop; Send-Json $res @{ ok = $true; name = $hit[0].name } }
+          catch { Send-Json $res @{ error = "Couldn't close it: $($_.Exception.Message)" } 400 }
           break }
         '^/api/hl/unload$' { Stop-Model; Send-Json $res @{ ok = $true }; break }
         '^/api/hl/config$' {

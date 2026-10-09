@@ -29,7 +29,11 @@ Everything runs on your own computer. Nothing you type leaves it.
   with an estimated speed and one-click download or delete. Any other Ollama or Hugging Face
   model can be downloaded by name.
 - **Arena**: ask 2–4 models the same question side by side and see which is fastest.
-- **Running**: what's loaded, how much is on the GPU, and Unload buttons to free memory.
+- **Running**: what's loaded, a progress bar while a model loads, and Unload buttons to free memory.
+- **Memory**: MEM and VRAM gauges in the header with a **Clear memory** button (unloads the model and
+  frees RAM other programs aren't using), and a list of apps holding GPU memory with Close buttons for
+  other AI apps such as LM Studio and Ollama. Before loading, Halo Lab checks how much GPU memory is
+  really free and, if a model doesn't fully fit, runs part of it on the CPU instead of failing.
 - **Hardware**: live CPU, GPU and **NPU** use with graphs, which programs are using the GPU and
   NPU, GPU memory in use, and whether a model has spilled into slower shared RAM.
 - **Benchmark**: real reading and writing speeds on your machine, with peak GPU/NPU use and history.
