@@ -308,14 +308,16 @@ td.num{font-family:var(--mono)}
   <p class="sub">Picked for a 96 GB Strix Halo machine. Fit and speed update with your GPU budget and context size. Speeds are rough estimates; use Benchmark for real numbers.</p>
   <details class="card picks-card" open id="picksCard">
     <summary><b>Suggested models for this PC</b> <span class="stamp">Updated Oct 8, 2026</span></summary>
-    <p class="small muted" style="margin:6px 0 10px">AI models move fast, so treat these as a snapshot from the date above. New models may have come out since; you can download any of them by name below.</p>
+    <p class="small muted" style="margin:6px 0 10px">AI models move fast, so treat these as a snapshot from the date above. New models may have come out since; you can download any of them by name below. (Claude and other closed models like ChatGPT can't be downloaded; these are the best open models that run on this PC.)</p>
     <div class="picks-grid">
       <div>
         <h4><span class="badge gpu">GPU</span> Built-in engine (Radeon 8060S)</h4>
         <table class="ptable"><thead><tr><th>Model</th><th>Download</th><th>Why</th></tr></thead><tbody>
           <tr><td><b>Qwen3 30B-A3B</b><div class="small muted">Start here</div></td><td class="num">18.6 GB</td><td>Smart and very fast on this chip (est. 60+ tok/s).</td></tr>
           <tr><td><b>gpt-oss 120B</b></td><td class="num">63 GB</td><td>The best model this PC can run. Fits in the ~80 GB the engine can use (est. 35–50 tok/s).</td></tr>
-          <tr><td><b>Qwen3 Coder 30B</b></td><td class="num">18.6 GB</td><td>For writing code.</td></tr>
+          <tr><td><b>Qwen3.5 122B-A10B</b><div class="small muted">Newer, 2026</div></td><td class="num">61 GB</td><td>Same size class as gpt-oss 120B, stronger at reasoning, reads images (est. 25–30 tok/s).</td></tr>
+          <tr><td><b>Qwen3.8 27B</b><div class="small muted">Newest, Aug 2026</div></td><td class="num">18 GB</td><td>Top coding scores for its size, reads images. Slower, ~10 tok/s.</td></tr>
+          <tr><td><b>Qwen3 Coder 30B</b></td><td class="num">18.6 GB</td><td>For writing code, fast.</td></tr>
           <tr><td><b>Gemma 3 27B</b></td><td class="num">17 GB</td><td>Reads images (drop a photo in Chat). Slower, ~10 tok/s.</td></tr>
           <tr class="skip"><td><b>Llama 3.3 / DeepSeek-R1 70B</b></td><td class="num">42.5 GB</td><td>Skip unless curious: smart, but only ~5 tok/s here.</td></tr>
         </tbody></table>
@@ -485,6 +487,8 @@ const systemText=()=>S.preset==='custom'?S.custom:PRESETS[S.preset];
 
 /* ---------- catalog (sizes are the Hugging Face downloads used by the Halo Lab engine) ---------- */
 const CATALOG=[
+ {tag:'qwen3.5:122b',hf:{repo:'unsloth/Qwen3.5-122B-A10B-GGUF',quant:'UD-IQ4_XS',vision:true},name:'Qwen3.5 122B-A10B',maker:'Alibaba · 2026',params:'122B MoE',active:10,size:61.1,kv:.1,bpp:.55,kinds:['chat','reason','vision'],ctx:'256K',note:'A 2026 model in the same size class as gpt-oss 120B: stronger at reasoning, and it can read images. A bit slower because more of it works on each word.'},
+ {tag:'qwen3.8:27b',hf:{repo:'unsloth/Qwen3.8-27B-GGUF',quant:'Q4_K_M',vision:true},name:'Qwen3.8 27B',maker:'Alibaba · Aug 2026',params:'27B dense',active:27,size:18,kv:.25,bpp:.6,kinds:['chat','reason','code','vision'],ctx:'256K',note:'The newest model here, with top coding and agent scores for its size, and it reads images. Dense, so slower (about 10 tok/s) but small.'},
  {tag:'gpt-oss:120b',hf:{repo:'ggml-org/gpt-oss-120b-GGUF',quant:'MXFP4'},name:'gpt-oss 120B',maker:'OpenAI',params:'117B MoE',active:5.1,size:63.4,kv:.07,bpp:.55,kinds:['chat','reason'],ctx:'128K',note:'The flagship open model that fits this box. Strong reasoning at real conversational speed thanks to MoE. Needs about 68 GB of GPU memory, which a 96 GB EVO-X2 has.'},
  {tag:'gpt-oss:20b',hf:{repo:'ggml-org/gpt-oss-20b-GGUF',quant:'MXFP4'},name:'gpt-oss 20B',maker:'OpenAI',params:'21B MoE',active:3.6,size:12.1,kv:.05,bpp:.55,kinds:['chat','reason','fast'],ctx:'128K',note:'Fast, capable reasoning model. A great everyday default.'},
  {tag:'qwen3:30b',hf:{repo:'unsloth/Qwen3-30B-A3B-GGUF',quant:'Q4_K_M'},name:'Qwen3 30B-A3B',maker:'Alibaba',params:'30B MoE',active:3.3,size:18.6,kv:.1,bpp:.6,kinds:['chat','reason','fast'],ctx:'256K',note:'Very fast all-rounder with optional thinking mode. Excellent first download.'},
