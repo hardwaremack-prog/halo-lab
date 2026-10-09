@@ -116,6 +116,7 @@ textarea.sys{width:100%;min-height:110px;resize:vertical;font-size:13px}
 .tag{font-family:var(--mono);font-size:12px;color:var(--mute)}
 .badges{display:flex;gap:5px;flex-wrap:wrap}
 .badge{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.badge.npu{color:#c9a7ff;border-color:#4b2f7a;background:#241a38}.badge.gpu{color:var(--acc2);border-color:#5a3420}
 .badge.ok{color:var(--ok);border-color:#1f5a3a}.badge.warn{color:var(--warn);border-color:#5a4520}.badge.bad{color:var(--bad);border-color:#5a2525}.badge.inst{color:var(--blue);border-color:#22456b}
 .meter{height:7px;border-radius:9px;background:var(--panel3);overflow:hidden;position:relative}
 .meter i{position:absolute;inset:0 auto 0 0;border-radius:9px}
@@ -300,6 +301,9 @@ td.num{font-family:var(--mono)}
   </div>
   <div class="filters" id="filters"></div>
   <div class="grid" id="libGrid"></div>
+  <h3 style="margin-top:26px">Runs on the NPU <span class="badge npu">NPU</span></h3>
+  <p class="small muted" style="margin:0 0 10px">Everything above runs on the <b>Radeon GPU</b> through Halo Lab's engine. These run on the <b>Ryzen AI NPU</b> instead, through AMD's free <b>FastFlowLM</b> (or Lemonade). They're smaller and slower than the GPU (Qwen3 8B: about 12 tok/s on the NPU vs about 40 on your GPU), but use very little power and leave the GPU free. Setup is in the Setup tab; copy a command, then pick <b>FastFlowLM (NPU)</b> at the top right.</p>
+  <div class="grid" id="npuGrid"></div>
   <h3 style="margin-top:26px">Also installed</h3>
   <div id="otherInstalled" class="muted small"></div>
 </div></section>
@@ -334,7 +338,7 @@ td.num{font-family:var(--mono)}
   <div class="card" style="margin-top:12px">
     <h3 style="margin:0 0 6px;font-size:15px">Why is the NPU usually at 0%?</h3>
     <p class="small muted" style="margin:0">The NPU is a low-power AI chip built for efficiency, not raw speed. <b>Ollama, LM Studio and llama.cpp run models on the GPU</b>, which is far faster for big models on this machine, so the NPU sits idle while you chat with them. That's normal.</p>
-    <p class="small muted">To put the NPU to work, use <b>AMD Lemonade Server</b> (pick it at the top right) with a model marked <b>NPU</b> or <b>Hybrid</b> in Lemonade's model manager. Hybrid models read your prompt on the NPU and write the answer on the GPU. Windows Studio Effects (camera blur, eye contact) and some Copilot+ features also use the NPU, and they'll show up here too.</p>
+    <p class="small muted">To put the NPU to work, use one of the models in Model Library → <b>Runs on the NPU</b> with AMD's free <b>FastFlowLM</b>, or <b>AMD Lemonade Server</b> with a model marked <b>NPU</b> or <b>Hybrid</b>, and pick that engine at the top right. Hybrid models read your prompt on the NPU and write the answer on the GPU. Windows Studio Effects (camera blur, eye contact) and some Copilot+ features also use the NPU, and they'll show up here too.</p>
   </div>
 </div></section>
 
@@ -378,7 +382,8 @@ td.num{font-family:var(--mono)}
   <ol>
     <li><b>Ollama</b>: install from <span class="mono">ollama.com/download</span>, then pick Ollama at the top right. If the dot stays red, run <span class="mono">Fix Ollama connection.bat</span> once. Note: on Windows, Ollama may run this chip on the CPU only, which is much slower. Check the GPU meter while it answers.</li>
     <li><b>LM Studio</b>: in the Developer tab, start the server and turn on <b>Enable CORS</b>. Download models in LM Studio's own Discover tab.</li>
-    <li><b>AMD Lemonade Server</b>: AMD's engine, and the way to put the <b>NPU</b> to work.</li>
+    <li><b>FastFlowLM (runs models on the NPU)</b>: install <span class="mono">flm-setup.msi</span> from <span class="mono">github.com/FastFlowLM/FastFlowLM/releases</span> (it needs AMD's NPU driver 32.0.203.311 or newer). In PowerShell run a command from the Library's <b>Runs on the NPU</b> section, for example <span class="mono">flm serve qwen3:8b</span>, which downloads the model the first time. Then pick <b>FastFlowLM (NPU)</b> at the top right and chat. The NPU meter in the Hardware tab lights up while it answers.</li>
+    <li><b>AMD Lemonade Server</b>: AMD's app that can run models on the NPU (FastFlowLM inside) or in Hybrid mode (the NPU reads your prompt, the GPU writes the answer). Use its model manager, then pick AMD Lemonade at the top right.</li>
   </ol>
   <div class="card">
     <h3 style="margin-top:0">Engine addresses</h3>
@@ -412,6 +417,7 @@ const BACKENDS={
   halo:{label:'Halo Lab engine',type:'openai',url:(HL||location.origin)+'/v1'},
   ollama:{label:'Ollama',type:'ollama',url:'http://localhost:11434'},
   lmstudio:{label:'LM Studio',type:'openai',url:'http://localhost:1234/v1'},
+  flm:{label:'FastFlowLM (NPU)',type:'openai',url:'http://localhost:52625/v1'},
   lemonade:{label:'AMD Lemonade',type:'openai',url:'http://localhost:8000/api/v1'},
   llamacpp:{label:'llama.cpp server',type:'openai',url:'http://localhost:8080/v1'}
 };
@@ -448,6 +454,16 @@ const CATALOG=[
  {tag:'devstral:24b',hf:{repo:'unsloth/Devstral-Small-2507-GGUF',quant:'Q4_K_M'},name:'Devstral 24B',maker:'Mistral',params:'24B dense',active:24,size:14.3,kv:.16,bpp:.6,kinds:['code'],ctx:'128K',note:'Built for coding agents and multi-file edits.'},
  {tag:'phi4:14b',hf:{repo:'bartowski/phi-4-GGUF',quant:'Q4_K_M'},name:'Phi-4 14B',maker:'Microsoft',params:'14B dense',active:14,size:9.1,kv:.2,bpp:.6,kinds:['chat','reason','fast'],ctx:'16K',note:'Small but sharp at math and logic.'},
  {tag:'llama3.2:3b',hf:{repo:'bartowski/Llama-3.2-3B-Instruct-GGUF',quant:'Q4_K_M'},name:'Llama 3.2 3B',maker:'Meta',params:'3B dense',active:3,size:2.0,kv:.11,bpp:.65,kinds:['fast'],ctx:'128K',note:'Tiny and instant. Handy for testing that everything works.'}
+];
+/* models that run on the Ryzen AI NPU (XDNA 2). They need FastFlowLM or AMD Lemonade, not the built-in engine.
+   Speeds are FastFlowLM's published numbers for the same NPU generation (Ryzen AI 7 350) at 1K context. */
+const NPU_MODELS=[
+ {name:'Qwen3 8B',flm:'qwen3:8b',tps:'~12',note:'Best all-rounder that fits the NPU. Thinking mode on or off.',rec:true},
+ {name:'gpt-oss 20B',flm:'gpt-oss:20b',tps:'~18',note:'The biggest model the NPU runs. Good reasoning at low power.'},
+ {name:'Qwen3 4B',flm:'qwen3:4b',tps:'~20',note:'Quick everyday answers while sipping power.'},
+ {name:'Llama 3.2 3B',flm:'llama3.2:3b',lemon:'Llama-3.2-3B-Instruct-Hybrid',tps:'~25',note:'Small and quick. Also in Lemonade as a Hybrid model (NPU reads, GPU writes).'},
+ {name:'Qwen3 1.7B',flm:'qwen3:1.7b',tps:'~40',note:'Tiny and fast for simple jobs.'},
+ {name:'DeepSeek-R1 Distill 8B',lemon:'DeepSeek-R1-Distill-Llama-8B-Hybrid',tps:'–',note:'Reasoning model, in Lemonade as a Hybrid model.'}
 ];
 const KINDS={all:'All',chat:'General',reason:'Reasoning',code:'Coding',vision:'Sees images',fast:'Fast'};
 let libFilter='all';
@@ -804,6 +820,16 @@ function renderSetupBox(){
   $('#mdirSave').onclick=()=>hl('config',{modelsDir:$('#mdirIn').value.trim()}).then(()=>{toast('Models folder saved');el.dataset.h='';hlPoll()}).catch(x=>toast(x.message));
 }
 
+function renderNpu(){
+  const el=$('#npuGrid');if(!el)return;
+  el.innerHTML=NPU_MODELS.map(m=>`<div class="card mcard"><div class="t"><div><h3>${esc(m.name)}</h3><div class="tag">${esc(m.flm||m.lemon)}</div></div>
+    <div class="badges">${m.rec?'<span class="badge ok">Recommended</span>':''}<span class="badge npu">NPU</span></div></div>
+    <div class="small muted">${esc(m.note)}</div>
+    <div class="kv"><div><span>Runs on</span>${m.lemon&&!m.flm?'NPU + GPU':'NPU'}</div><div><span>App</span>${m.flm?'FastFlowLM':'Lemonade'}</div><div><span>Est. speed</span>${m.tps} tok/s</div></div>
+    <div class="acts">${m.flm?`<button data-copy="flm serve ${esc(m.flm)}">Copy "flm serve ${esc(m.flm)}"</button>`:`<button data-copy="${esc(m.lemon)}">Copy model name</button>`}</div></div>`).join('');
+  el.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(b.dataset.copy).then(()=>toast('Copied: '+b.dataset.copy+(b.dataset.copy.startsWith('flm')?'. Paste it into PowerShell.':''))).catch(()=>toast(b.dataset.copy))});
+}
+
 /* ---------- library ---------- */
 const pulls={};
 function fit(e){const need=e.size+e.kv*(S.ctx/1024)+1;const spill=Math.max(S.gpuGB,96-16);
@@ -816,7 +842,7 @@ function renderLibrary(){
   const isOl=B().type==='ollama',canDl=isOl||isHalo(),canDel=isOl||isHalo();
   $('#libGrid').innerHTML=list.map(e=>{const ft=fit(e),inst=isInstalled(e.tag),p=dlState(e.tag),pct=Math.min(100,ft.need/96*100);
     return `<div class="card mcard"><div class="t"><div><h3>${esc(e.name)}</h3><div class="tag">${esc(e.tag)} · ${esc(e.maker)}</div></div>
-    <div class="badges">${inst?'<span class="badge inst">Installed</span>':''}<span class="badge ${ft.cls}">${ft.label}</span></div></div>
+    <div class="badges">${inst?'<span class="badge inst">Installed</span>':''}<span class="badge gpu" title="Runs on the Radeon GPU">GPU</span><span class="badge ${ft.cls}">${ft.label}</span></div></div>
     <div class="badges">${e.kinds.map(k=>`<span class="badge">${KINDS[k]}</span>`).join('')}</div>
     <div class="small muted">${esc(e.note)}</div>
     <div class="kv"><div><span>Size</span>${e.params}</div><div><span>Memory @ ${S.ctx/1024}K ctx</span>~${ft.need.toFixed(0)} GB</div><div><span>Est. speed</span>~${estTps(e)} tok/s</div></div>
@@ -1016,7 +1042,7 @@ function renderHw(){
   if(!n.present&&!n.found){badge='Not found';bcls='bad';state='Windows doesn\'t list an NPU. Install the latest AMD chipset or Ryzen AI NPU driver from amd.com, then restart.'}
   else if(!n.found){badge='No data';bcls='warn';state='The NPU is installed, but Windows isn\'t reporting its activity. This needs Windows 11 24H2 or newer and an up-to-date AMD NPU driver. If Task Manager shows an NPU graph, restart the monitor.'}
   else if(n.util>1){badge='Active';bcls='ok';live=true;state='The NPU is working right now.'}
-  else{badge='Idle';bcls='';state='Idle: nothing is using the NPU right now.'+(S.backend!=='lemonade'?` ${B().label} runs models on the GPU, so this is expected while you chat.`:' Load an NPU or Hybrid model in Lemonade to use it.')}
+  else{badge='Idle';bcls='';state='Idle: nothing is using the NPU right now.'+(S.backend!=='lemonade'&&S.backend!=='flm'?` ${B().label} runs models on the GPU, so this is expected while you chat.`:' Start an NPU model to use it (see Model Library → Runs on the NPU).')}
   $('#npuBadge').textContent=badge;$('#npuBadge').className='badge '+bcls;
   $('#npuBig').textContent=n.found?Math.round(n.util)+'%':'–';
   $('#npuState').textContent=state;$('#npuState').className='npustate'+(live?' live':'');
@@ -1050,7 +1076,7 @@ function showTab(t){curTab=t;$$('#tabs button').forEach(b=>b.classList.toggle('o
 $('#tabs').onclick=e=>{const t=e.target.dataset.tab;if(t)showTab(t)};
 
 /* ---------- start ---------- */
-loadSettingsUI();renderChatList();renderChat();renderLibrary();renderBench();connect();pollHw();
+loadSettingsUI();renderChatList();renderChat();renderLibrary();renderNpu();renderBench();connect();pollHw();
 </script>
 </body>
 </html>
