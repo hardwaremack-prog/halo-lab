@@ -412,6 +412,7 @@ $ProxyJob = {
       $res.StatusCode = 502
       $res.ContentType = 'application/json'
       $msg = 'The AI engine is not running. Pick a model in Chat to load it.'
+      if ($base -like '*:1234') { $msg = 'LM Studio is not answering. Open LM Studio and make sure its server is on (Developer tab).' }
       if ($base -like '*52625*') { $msg = 'FastFlowLM is not running. In Model Library, press Run on NPU on a model.' }
       $b = [Text.Encoding]::UTF8.GetBytes('{"error":{"message":"' + $msg + '"}}')
       $res.OutputStream.Write($b, 0, $b.Length)
@@ -783,6 +784,9 @@ $ServerCode = {
         '^/v1/' {
           # chat goes through here so the page only ever talks to Halo Lab itself
           Start-Bg $sync.proxyCode @($sync, $ctx, 'http://127.0.0.1:11600', 0); break }
+        '^/lms/' {
+          # LM Studio, proxied so it works even with LM Studio's CORS setting off
+          Start-Bg $sync.proxyCode @($sync, $ctx, 'http://127.0.0.1:1234', 4); break }
         '^/flm/v1/' {
           # FastFlowLM (NPU) traffic also goes through Halo Lab
           Start-Bg $sync.proxyCode @($sync, $ctx, 'http://127.0.0.1:52625', 4); break }

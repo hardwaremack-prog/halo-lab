@@ -466,7 +466,7 @@ const HL=(location.protocol.startsWith('http')&&location.port==='11500')?'':'htt
 const BACKENDS={
   halo:{label:'Halo Lab engine',type:'openai',url:(HL||location.origin)+'/v1'},
   ollama:{label:'Ollama',type:'ollama',url:'http://localhost:11434'},
-  lmstudio:{label:'LM Studio',type:'openai',url:'http://localhost:1234/v1'},
+  lmstudio:{label:'LM Studio',type:'openai',url:(HL||location.origin)+'/lms/v1'},
   flm:{label:'FastFlowLM (NPU)',type:'openai',url:(HL||location.origin)+'/flm/v1'},
   lemonade:{label:'AMD Lemonade',type:'openai',url:'http://localhost:8000/api/v1'},
   llamacpp:{label:'llama.cpp server',type:'openai',url:'http://localhost:8080/v1'}
